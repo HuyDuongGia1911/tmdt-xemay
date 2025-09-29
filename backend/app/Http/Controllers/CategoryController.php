@@ -7,21 +7,42 @@ use App\Http\Requests\UpdateCategoryRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Category;
+use Illuminate\Support\Facades\Cache;
 
 class CategoryController extends Controller
 {
     // GET /api/categories?page=1&per_page=10
+
+
     public function index(Request $request)
     {
         $perPage = (int) $request->get('per_page', 12);
-        $q = Category::query()->orderBy('name');
+        $search  = $request->get('search');
 
-        if ($search = $request->get('search')) {
-            $q->where('name', 'ILIKE', "%{$search}%");
-        }
+        // tạo key cache động (per_page + search) để tránh đè lẫn
+        $cacheKey = "categories:index:v1:perpage={$perPage}:search=" . ($search ?? 'none');
 
-        return response()->json($q->paginate($perPage));
+        // check xem cache đã có chưa
+        $hit = Cache::tags(['categories'])->has($cacheKey);
+
+        $categories = Cache::tags(['categories'])->remember($cacheKey, 3600, function () use ($perPage, $search) {
+            $q = Category::query()->orderBy('name');
+
+            if ($search) {
+                $q->where('name', 'ILIKE', "%{$search}%");
+            }
+
+            // convert paginator thành array để Redis dễ lưu
+            return $q->paginate($perPage)->toArray();
+        });
+
+        return response()
+            ->json($categories)
+            ->header('X-Cache', $hit ? 'HIT' : 'MISS')
+            ->header('X-Cache-Store', config('cache.default'));
     }
+
+
 
     // GET /api/categories/{id}
     public function show($id)

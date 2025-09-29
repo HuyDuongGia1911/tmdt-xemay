@@ -5,13 +5,17 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MotorcycleController;
 use App\Http\Controllers\MotorcycleImageController;
+use App\Http\Controllers\Api\MotorcycleCatalogController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
-Route::get('/motorcycles', [MotorcycleController::class, 'index']);
-Route::get('/motorcycles/{motorcycle:slug}', [MotorcycleController::class, 'show']);
+// Catalog cho buyer
+Route::get('/motorcycles', [MotorcycleCatalogController::class, 'index']);
+Route::get('/motorcycles/featured', [MotorcycleCatalogController::class, 'featured']);
+Route::get('/motorcycles/{motorcycle:slug}', [MotorcycleController::class, 'show']); // chi tiết 1 xe
+
 // Health check (bạn đã có, để nguyên nếu khác)
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
 
