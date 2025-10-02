@@ -19,7 +19,7 @@ class RoleMiddleware
             // Chưa đăng nhập
             return response()->json(['message' => 'Unauthenticated'], 401);
         }
-        \Log::info('DEBUG ROLE', ['role' => $user->role, 'allowed' => $roles]);
+
 
         if (empty($roles)) {
             // Nếu không truyền tham số, cho qua (không khuyến nghị)
@@ -28,7 +28,7 @@ class RoleMiddleware
 
         // Nếu vai trò user nằm trong danh sách cho phép
         if (in_array($user->role, $roles, true)) {
-            \Log::info('PASS ROLE', ['role' => $user->role]);
+
             return $next($request);
         }
 

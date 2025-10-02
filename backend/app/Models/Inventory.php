@@ -14,6 +14,6 @@ class Inventory extends Model
 
     public function motorcycle()
     {
-        return $this->belongsTo(Motorcycle::class);
+        return $this->belongsTo(\App\Models\Motorcycle::class);
     }
 }

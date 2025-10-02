@@ -18,12 +18,13 @@ class Order extends Model
         'payment_status',
         'paid_at'
     ];
-    protected $casts = ['paid_at' => 'datetime'];
+    protected $casts = ['paid_at' => 'datetime',  'address_json' => 'array'];
 
     public function items()
     {
-        return $this->hasMany(OrderItem::class);
+        return $this->hasMany(\App\Models\OrderItem::class);
     }
+
     public function buyer()
     {
         return $this->belongsTo(User::class, 'buyer_id');

@@ -40,8 +40,9 @@ class Motorcycle extends Model
     }
     public function inventory()
     {
-        return $this->hasOne(Inventory::class);
+        return $this->hasOne(\App\Models\Inventory::class, 'motorcycle_id');
     }
+
     public function reviews()
     {
         return $this->hasMany(Review::class);

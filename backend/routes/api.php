@@ -6,6 +6,8 @@ use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\MotorcycleController;
 use App\Http\Controllers\MotorcycleImageController;
 use App\Http\Controllers\Api\MotorcycleCatalogController;
+use App\Http\Controllers\CartController;
+use App\Http\Controllers\OrderController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -54,4 +56,13 @@ Route::middleware(['auth:sanctum', 'role:seller,admin'])->group(function () {
     // Upload/xóa ảnh
     Route::post('/motorcycles/{id}/images', [MotorcycleImageController::class, 'store']);
     Route::delete('/motorcycles/{id}/images/{imageId}', [MotorcycleImageController::class, 'destroy']);
+});
+//cart va checkout cho buyer
+Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
+    Route::get('/cart', [CartController::class, 'show']);
+    Route::post('/cart/items', [CartController::class, 'addItem']);
+    Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
+    Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
+
+    Route::post('/orders/checkout', [OrderController::class, 'checkout']);
 });

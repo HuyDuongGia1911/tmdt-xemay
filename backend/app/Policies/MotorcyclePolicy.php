@@ -19,11 +19,27 @@ class MotorcyclePolicy
 
     public function update(User $user, Motorcycle $motorcycle): bool
     {
-        return $user->role === 'admin' || $motorcycle->seller_id === $user->id;
+        \Log::info('POLICY UPDATE', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'user_seller_id' => optional($user->seller)->id,
+            'motorcycle_seller_id' => $motorcycle->seller_id
+        ]);
+
+        return $user->role === 'admin'
+            || ($user->role === 'seller' && $user->seller && $motorcycle->seller_id === $user->seller->id);
     }
 
     public function delete(User $user, Motorcycle $motorcycle): bool
     {
-        return $user->role === 'admin' || $motorcycle->seller_id === $user->id;
+        \Log::info('POLICY DELETE', [
+            'user_id' => $user->id,
+            'role' => $user->role,
+            'user_seller_id' => optional($user->seller)->id,
+            'motorcycle_seller_id' => $motorcycle->seller_id
+        ]);
+
+        return $user->role === 'admin'
+            || ($user->role === 'seller' && $user->seller && $motorcycle->seller_id === $user->seller->id);
     }
 }

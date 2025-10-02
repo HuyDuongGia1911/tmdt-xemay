@@ -8,7 +8,7 @@ use App\Models\Motorcycle;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
-
+use App\Http\Controllers\Controller;
 
 class MotorcycleController extends Controller
 {
@@ -60,8 +60,8 @@ class MotorcycleController extends Controller
     // POST /api/motorcycles
     public function store(StoreMotorcycleRequest $request)
     {
-        \Log::info('STORE MOTORCYCLE USER ROLE', ['role' => auth()->user()->role]);
-        // $this->authorize('create', Motorcycle::class);
+
+        $this->authorize('create', Motorcycle::class);
 
         $data = $request->validated();
 
@@ -80,7 +80,7 @@ class MotorcycleController extends Controller
     // PUT /api/motorcycles/{motorcycle}
     public function update(UpdateMotorcycleRequest $request, Motorcycle $motorcycle)
     {
-        // $this->authorize('update', $motorcycle);
+        $this->authorize('update', $motorcycle);
 
         $data = $request->validated();
 
@@ -96,7 +96,7 @@ class MotorcycleController extends Controller
     // DELETE /api/motorcycles/{motorcycle}
     public function destroy(Motorcycle $motorcycle)
     {
-        // $this->authorize('delete', $motorcycle);
+        $this->authorize('delete', $motorcycle);
         $motorcycle->delete();
 
         return response()->json(['message' => 'Deleted']);
