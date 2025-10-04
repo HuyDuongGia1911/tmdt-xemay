@@ -8,6 +8,7 @@ use App\Http\Controllers\MotorcycleImageController;
 use App\Http\Controllers\Api\MotorcycleCatalogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
+use App\Http\Controllers\PaymentController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -63,6 +64,12 @@ Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
     Route::post('/cart/items', [CartController::class, 'addItem']);
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
-
     Route::post('/orders/checkout', [OrderController::class, 'checkout']);
+    // Buyer chọn cổng và khởi tạo thanh toán
+    Route::post('/payments/{order}/init', [PaymentController::class, 'init']);
+});
+// IPN/Webhook: không yêu cầu auth, nhưng nên throttle
+Route::middleware('throttle:60,1')->group(function () {
+    Route::post('/payments/momo/ipn', [PaymentController::class, 'momoIpn']);
+    Route::match(['get', 'post'], '/payments/vnpay/ipn', [PaymentController::class, 'vnpayIpn']);
 });
