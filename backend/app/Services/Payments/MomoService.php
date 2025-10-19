@@ -8,7 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
-
+use App\Jobs\SendPaymentPaidMail;
 
 class MomoService implements PaymentService
 {
@@ -111,26 +111,38 @@ class MomoService implements PaymentService
             . "&responseTime={$payload['responseTime']}"
             . "&resultCode={$payload['resultCode']}"
             . "&transId={$payload['transId']}";
-
+        \Log::info('IPN received', ['payload' => $payload]);
         $calcSig = hash_hmac('sha256', $raw, $this->cfg['secret_key']);
+        \Log::info('Signature check', [
+            'calc' => $calcSig,
+            'remote' => $payload['signature'] ?? null,
+        ]);
         if (($payload['signature'] ?? '') !== $calcSig) {
+            \Log::warning('Invalid signature', ['payload' => $payload]);
             return ['ok' => false, 'message' => 'Invalid signature'];
         }
 
         // Tìm Payment record
         $payment = Payment::where('tx_id', $payload['orderId'] ?? '')->first();
         if (!$payment) {
+            \Log::warning('Payment not found', ['orderId' => $payload['orderId'] ?? null]);
             return ['ok' => false, 'message' => 'Payment not found'];
         }
 
         // So khớp amount
         if ((int)$payment->amount !== (int)($payload['amount'] ?? 0)) {
+            \Log::warning('Amount mismatched', [
+                'expected' => $payment->amount,
+                'got' => $payload['amount'] ?? 0
+            ]);
             return ['ok' => false, 'message' => 'Amount mismatched'];
         }
 
         // Cập nhật trạng thái an toàn
-        DB::transaction(function () use ($payment, $payload) {
+        $order = null;
+        DB::transaction(function () use ($payment, $payload, &$order) {
             $payment->refresh();
+            $order = $payment->order()->lockForUpdate()->first();
             if ($payment->status === 'paid') {
                 return; // đã xử lý rồi
             }
@@ -160,6 +172,15 @@ class MomoService implements PaymentService
                 $order->save();
             }
         });
+        $payment->refresh();
+        if ($order && $payment->status === 'paid') {
+            \Log::info('After transaction', [
+                'payment_status' => $payment->status,
+                'order_id' => $order?->id
+            ]);
+
+            dispatch(new SendPaymentPaidMail($order->id))->onQueue('emails');
+        }
 
         return ['ok' => true, 'message' => 'IPN processed'];
     }

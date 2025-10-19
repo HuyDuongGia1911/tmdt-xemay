@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Services\Payments\PaymentFactory;
 use Illuminate\Http\Request;
+use App\Jobs\SendPaymentPaidMail;
 
 class PaymentController extends Controller
 {

@@ -1,0 +1,10 @@
+{
+    "require": {
+        "predis/predis": "*"
+    },
+    "config": {
+        "allow-plugins": {
+            "kylekatarnls/update-helper": true
+        }
+    }
+}

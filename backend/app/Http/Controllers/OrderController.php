@@ -6,6 +6,7 @@ use App\Http\Requests\CheckoutRequest;
 use App\Services\CartService;
 use App\Services\CheckoutService;
 use Illuminate\Http\Request;
+use App\Jobs\SendOrderPlacedMail;
 
 class OrderController extends Controller
 {
@@ -26,6 +27,7 @@ class OrderController extends Controller
             $request->input('payment_method'),
             $idempotencyKey
         );
+        dispatch(new SendOrderPlacedMail($order->id))->onQueue('emails');
 
         return response()->json([
             'message' => 'Đã tạo đơn hàng (pending) và giữ chỗ tồn kho.',
