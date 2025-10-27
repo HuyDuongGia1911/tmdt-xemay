@@ -44,13 +44,58 @@ import MainLayout from './layouts/MainLayout'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 
+import Login from './pages/Login'       // <-- thêm
+import Register from './pages/Register' // <-- thêm
+import Profile from './pages/Profile'   // <-- thêm
+
+import ProtectedRoute from './components/ProtectedRoute' // <-- thêm
+import RoleRoute from './components/RoleRoute'           // <-- thêm
+import Catalog from './pages/Catalog'
+import MotorcycleDetail from './pages/MotorcycleDetail'
 export default function App() {
   return (
     <MainLayout>
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/catalog" element={<Catalog />} />
+        <Route path="/motorcycles/:slug" element={<MotorcycleDetail />} />
+        {/* Auth pages (public) */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+
+        {/* Chỉ cần đăng nhập */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Ví dụ route chỉ cho buyer */}
+        <Route
+          path="/buyer/demo"
+          element={
+            <RoleRoute roles={['buyer']}>
+              <div className="bg-white p-6 rounded-xl shadow">Trang riêng Buyer</div>
+            </RoleRoute>
+          }
+        />
+
+        {/* Ví dụ route cho seller hoặc admin */}
+        <Route
+          path="/dashboard"
+          element={
+            <RoleRoute roles={['seller', 'admin']}>
+              <div className="bg-white p-6 rounded-xl shadow">Dashboard Seller/Admin</div>
+            </RoleRoute>
+          }
+        />
+
         <Route path="*" element={<NotFound />} />
       </Routes>
     </MainLayout>
   )
 }
+

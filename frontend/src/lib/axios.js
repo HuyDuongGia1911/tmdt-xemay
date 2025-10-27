@@ -1,3 +1,4 @@
+// src/lib/axios.js
 import axios from 'axios'
 import { STORAGE_TOKEN_KEY } from '../config/constants'
 
@@ -16,7 +17,12 @@ api.interceptors.response.use(
     (res) => res,
     (error) => {
         if (error?.response?.status === 401) {
-            // Sẽ xử lý ở Phần 11 (logout/redirect)
+            // Token hết hạn/không hợp lệ -> đăng xuất thô
+            localStorage.removeItem(STORAGE_TOKEN_KEY)
+            // Điều hướng về /login
+            if (window.location.pathname !== '/login') {
+                window.location.assign('/login')
+            }
         }
         return Promise.reject(error)
     }
