@@ -16,6 +16,7 @@ export default function Navbar() {
                 <nav className="flex items-center gap-2">
                     <NavLink to="/" className={navItemClass} end>Trang chủ</NavLink>
                     <NavLink to="/catalog" className={navItemClass}>Catalog</NavLink>
+                    <NavLink to="/cart" className={navItemClass}>Giỏ hàng</NavLink>
                     {/* Nếu đã đăng nhập */}
                     {user ? (
                         <>
@@ -35,8 +36,10 @@ export default function Navbar() {
                         </>
                     ) : (
                         <>
+
                             <NavLink to="/login" className={navItemClass}>Đăng nhập</NavLink>
                             <NavLink to="/register" className={navItemClass}>Đăng ký</NavLink>
+
                         </>
                     )}
                 </nav>

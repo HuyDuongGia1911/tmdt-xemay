@@ -52,6 +52,16 @@ import ProtectedRoute from './components/ProtectedRoute' // <-- thêm
 import RoleRoute from './components/RoleRoute'           // <-- thêm
 import Catalog from './pages/Catalog'
 import MotorcycleDetail from './pages/MotorcycleDetail'
+import CartPage from './pages/Cart/CartPage'
+import CheckoutPage from './pages/Checkout/CheckoutPage'
+import PaymentResult from './pages/PaymentResult'
+function Protected({ children, role }) {
+  const { user, loading } = useAuth()
+  if (loading) return <div className="p-6">Đang tải...</div>
+  if (!user) return <Navigate to="/login" replace />
+  if (role && user.role !== role) return <Navigate to="/" replace />
+  return children
+}
 export default function App() {
   return (
     <MainLayout>
@@ -73,12 +83,32 @@ export default function App() {
           }
         />
 
-        {/* Ví dụ route chỉ cho buyer */}
+        {/* Buyer: Giỏ hàng */}
         <Route
-          path="/buyer/demo"
+          path="/cart"
           element={
             <RoleRoute roles={['buyer']}>
-              <div className="bg-white p-6 rounded-xl shadow">Trang riêng Buyer</div>
+              <CartPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* Buyer: Checkout */}
+        <Route
+          path="/checkout"
+          element={
+            <RoleRoute roles={['buyer']}>
+              <CheckoutPage />
+            </RoleRoute>
+          }
+        />
+
+        {/* Buyer: Xem kết quả thanh toán */}
+        <Route
+          path="/payment-result"
+          element={
+            <RoleRoute roles={['buyer']}>
+              <PaymentResult />
             </RoleRoute>
           }
         />

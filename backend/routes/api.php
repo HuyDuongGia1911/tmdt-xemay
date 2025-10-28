@@ -18,6 +18,10 @@ Route::get('/categories/{id}', [CategoryController::class, 'show']);
 Route::get('/motorcycles', [MotorcycleCatalogController::class, 'index']);
 Route::get('/motorcycles/featured', [MotorcycleCatalogController::class, 'featured']);
 Route::get('/motorcycles/{motorcycle:slug}', [MotorcycleController::class, 'show']); // chi tiết 1 xe
+//xem đơn hàng
+Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
+    Route::get('/orders/{order}', [OrderController::class, 'show']);
+});
 
 // Health check (bạn đã có, để nguyên nếu khác)
 Route::get('/health', fn() => response()->json(['status' => 'ok']));
