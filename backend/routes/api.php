@@ -9,6 +9,8 @@ use App\Http\Controllers\Api\MotorcycleCatalogController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\DashboardSellerController;
+use App\Http\Controllers\DashboardAdminController;
 // Public routes
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/login',    [AuthController::class, 'login']);
@@ -76,4 +78,23 @@ Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
 Route::middleware('throttle:60,1')->group(function () {
     Route::post('/payments/momo/ipn', [PaymentController::class, 'momoIpn']);
     Route::match(['get', 'post'], '/payments/vnpay/ipn', [PaymentController::class, 'vnpayIpn']);
+});
+//dashboard cho admin và seller
+
+Route::middleware(['auth:sanctum'])->group(function () {
+    // SELLER
+    Route::prefix('dashboard/seller')->middleware('role:seller,admin')->group(function () {
+        Route::get('/overview', [DashboardSellerController::class, 'overview']);
+        Route::get('/orders',   [DashboardSellerController::class, 'orders']);
+        Route::get('/motorcycles', [DashboardSellerController::class, 'motorcycles']);
+        Route::patch('/motorcycles/{id}', [DashboardSellerController::class, 'updateMotorcycle']);
+    });
+
+    // ADMIN
+    Route::prefix('dashboard/admin')->middleware('role:admin')->group(function () {
+        Route::get('/overview', [DashboardAdminController::class, 'overview']);
+        Route::get('/orders',   [DashboardAdminController::class, 'orders']);
+        Route::get('/users',    [DashboardAdminController::class, 'users']);
+        Route::get('/payments', [DashboardAdminController::class, 'payments']);
+    });
 });

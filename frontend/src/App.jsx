@@ -55,6 +55,14 @@ import MotorcycleDetail from './pages/MotorcycleDetail'
 import CartPage from './pages/Cart/CartPage'
 import CheckoutPage from './pages/Checkout/CheckoutPage'
 import PaymentResult from './pages/PaymentResult'
+import SellerOverview from "./components/dashboard/seller/Overview"
+import SellerOrders from "./components/dashboard/seller/Orders"
+import AdminOverview from "./components/dashboard/admin/Overview"
+import AdminOrders from './components/dashboard/admin/Orders';
+import AdminUsers from './components/dashboard/admin/Users';
+import AdminPayments from './components/dashboard/admin/Payments';
+import SellerProducts from './components/dashboard/seller/Products';
+
 function Protected({ children, role }) {
   const { user, loading } = useAuth()
   if (loading) return <div className="p-6">Đang tải...</div>
@@ -122,7 +130,81 @@ export default function App() {
             </RoleRoute>
           }
         />
+        {/* SELLER */}
+        <Route
+          path="/dashboard/seller"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['seller', 'admin']}>
+                <SellerOverview />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/seller/orders"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['seller', 'admin']}>
+                <SellerOrders />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/seller/products"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['seller', 'admin']}>
+                <SellerProducts />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
 
+        {/* ADMIN */}
+        <Route
+          path="/dashboard/admin"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['admin']}>
+                <AdminOverview />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard/admin/orders"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['admin']}>
+                <AdminOrders />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/admin/users"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['admin']}>
+                <AdminUsers />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/dashboard/admin/payments"
+          element={
+            <ProtectedRoute>
+              <RoleRoute roles={['admin']}>
+                <AdminPayments />
+              </RoleRoute>
+            </ProtectedRoute>
+          }
+        />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </MainLayout>
