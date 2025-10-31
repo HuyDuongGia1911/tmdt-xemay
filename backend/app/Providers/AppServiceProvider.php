@@ -9,6 +9,8 @@ use Illuminate\Support\Facades\Gate;
 use App\Models\Motorcycle;
 use App\Policies\MotorcyclePolicy;
 
+use App\Observers\MotorcycleObserver;
+
 class AppServiceProvider extends ServiceProvider
 {
     /**
@@ -26,5 +28,6 @@ class AppServiceProvider extends ServiceProvider
     {
         // đăng ký policy cho Motorcycle
         Gate::policy(Motorcycle::class, MotorcyclePolicy::class);
+        Motorcycle::observe(MotorcycleObserver::class);
     }
 }

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Str;
 use App\Jobs\SendPaymentPaidMail;
+use Illuminate\Support\Facades\Log;
 
 class MomoService implements PaymentService
 {
@@ -65,19 +66,24 @@ class MomoService implements PaymentService
         $payload['signature'] = hash_hmac('sha256', $raw, $this->cfg['secret_key']);
 
         // === Thêm log để so sánh với MoMo ===
-        \Log::info('MOMO RAW STRING', ['raw' => $raw]);
-        \Log::info('MOMO SIGNATURE LOCAL', ['sig' => $payload['signature']]);
-        \Log::info('MOMO KEYS', [
+        Log::channel('payments')->info('momo_init_build', [
+            'raw' => $raw,
+            'signature' => $payload['signature'],
             'partnerCode' => $this->cfg['partner_code'],
             'accessKey'   => $this->cfg['access_key'],
-            'secretKey'   => substr($this->cfg['secret_key'], 0, 5) . '...'
+            // Không log full secret key
         ]);
+
 
 
         // Gọi MoMo API
         $res = Http::asJson()->post($this->cfg['endpoint']['create'], $payload);
         $data = $res->json();
-
+        Log::channel('payments')->info('momo_init_response', [
+            'tx_id'   => $payment->tx_id,
+            'status'  => $res->status(),
+            'body'    => $data,
+        ]);
         // Lưu response để debug
         $payment->raw_payload = ['request' => $payload, 'response' => $data];
         $payment->pay_url = $data['payUrl'] ?? null;
@@ -97,7 +103,12 @@ class MomoService implements PaymentService
     {
         $payload = $request->all();
 
-        // Build raw string verify signature (theo doc MoMo v3)
+        // 1) Log IPN ngay khi nhận
+        Log::channel('payments')->info('momo_ipn_received', [
+            'payload' => $payload,
+        ]);
+
+        // 2) Verify signature (theo doc MoMo v3)
         $raw = "accessKey={$this->cfg['access_key']}"
             . "&amount={$payload['amount']}"
             . "&extraData={$payload['extraData']}"
@@ -111,45 +122,54 @@ class MomoService implements PaymentService
             . "&responseTime={$payload['responseTime']}"
             . "&resultCode={$payload['resultCode']}"
             . "&transId={$payload['transId']}";
-        \Log::info('IPN received', ['payload' => $payload]);
+
         $calcSig = hash_hmac('sha256', $raw, $this->cfg['secret_key']);
-        \Log::info('Signature check', [
-            'calc' => $calcSig,
+
+        Log::channel('payments')->info('momo_ipn_signature_check', [
+            'calc'   => $calcSig,
             'remote' => $payload['signature'] ?? null,
         ]);
+
         if (($payload['signature'] ?? '') !== $calcSig) {
-            \Log::warning('Invalid signature', ['payload' => $payload]);
+            Log::channel('payments')->warning('momo_ipn_rejected_signature', [
+                'payload' => $payload,
+            ]);
             return ['ok' => false, 'message' => 'Invalid signature'];
         }
 
-        // Tìm Payment record
+        // 3) Tìm Payment record theo tx_id
         $payment = Payment::where('tx_id', $payload['orderId'] ?? '')->first();
         if (!$payment) {
-            \Log::warning('Payment not found', ['orderId' => $payload['orderId'] ?? null]);
+            Log::channel('payments')->warning('momo_ipn_payment_not_found', [
+                'orderId' => $payload['orderId'] ?? null
+            ]);
             return ['ok' => false, 'message' => 'Payment not found'];
         }
 
-        // So khớp amount
+        // 4) So khớp amount
         if ((int)$payment->amount !== (int)($payload['amount'] ?? 0)) {
-            \Log::warning('Amount mismatched', [
+            Log::channel('payments')->warning('momo_ipn_amount_mismatch', [
                 'expected' => $payment->amount,
-                'got' => $payload['amount'] ?? 0
+                'got'      => $payload['amount'] ?? 0
             ]);
             return ['ok' => false, 'message' => 'Amount mismatched'];
         }
 
-        // Cập nhật trạng thái an toàn
+        // 5) Cập nhật an toàn trong transaction + idempotent
         $order = null;
         DB::transaction(function () use ($payment, $payload, &$order) {
             $payment->refresh();
             $order = $payment->order()->lockForUpdate()->first();
+
+            // Idempotent: nếu đã paid thì bỏ qua
             if ($payment->status === 'paid') {
-                return; // đã xử lý rồi
+                return;
             }
 
             if ((string) $payload['resultCode'] === '0') {
                 // Thành công
                 $payment->status = 'paid';
+                $payment->paid_at = now(); // ➜ THÊM DÒNG NÀY
                 $payment->gateway_txn_id = $payload['transId'] ?? $payment->gateway_txn_id;
                 $payment->raw_payload = array_merge($payment->raw_payload ?? [], ['ipn' => $payload]);
                 $payment->save();
@@ -159,8 +179,14 @@ class MomoService implements PaymentService
                 if ($order->status === 'pending') {
                     $order->status = 'confirmed';
                 }
+                // Nếu bạn đã thêm cột orders.paid_at trong migration thì set, không thì bỏ dòng này
                 $order->paid_at = now();
                 $order->save();
+
+                Log::channel('payments')->info('momo_ipn_processed_paid', [
+                    'order_id'   => $order->id ?? null,
+                    'payment_id' => $payment->id ?? null,
+                ]);
             } else {
                 // Thất bại
                 $payment->status = 'failed';
@@ -170,20 +196,24 @@ class MomoService implements PaymentService
                 $order = $payment->order()->lockForUpdate()->first();
                 $order->payment_status = 'failed';
                 $order->save();
+
+                Log::channel('payments')->warning('momo_ipn_processed_failed', [
+                    'order_id'   => $order->id ?? null,
+                    'payment_id' => $payment->id ?? null,
+                    'resultCode' => $payload['resultCode'] ?? null,
+                ]);
             }
         });
+
+        // 6) Gửi email sau khi commit (chỉ khi đã paid)
         $payment->refresh();
         if ($order && $payment->status === 'paid') {
-            \Log::info('After transaction', [
-                'payment_status' => $payment->status,
-                'order_id' => $order?->id
-            ]);
-
             dispatch(new SendPaymentPaidMail($order->id))->onQueue('emails');
         }
 
         return ['ok' => true, 'message' => 'IPN processed'];
     }
+
 
     /**
      * Xử lý trang redirect (returnUrl)

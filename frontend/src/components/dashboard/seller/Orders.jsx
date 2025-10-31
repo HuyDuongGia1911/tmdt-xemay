@@ -128,7 +128,7 @@ export default function SellerOrders() {
                 </table>
             </div>
 
-            {/* ✅ pager giống Products */}
+            {/*  pager giống Products */}
             <div className="flex gap-2 mt-3">
                 <button
                     disabled={cur <= 1}
