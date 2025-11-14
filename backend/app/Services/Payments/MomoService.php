@@ -47,7 +47,7 @@ class MomoService implements PaymentService
             'orderInfo'   => 'Thanh toán cho hóa đơn #' . $order->code,
             'redirectUrl' => $this->cfg['redirect_url'],
             'ipnUrl'      => $this->cfg['ipn_url'],
-            'extraData'   => '',
+            'extraData' => (string) $order->id,
             'requestType' => 'captureWallet',
 
         ];

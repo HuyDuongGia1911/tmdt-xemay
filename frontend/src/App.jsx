@@ -1,213 +1,216 @@
-// import { useState } from 'react'
-// import reactLogo from './assets/react.svg'
-// import viteLogo from '/vite.svg'
-// import './App.css'
-
-// function App() {
-//   const [count, setCount] = useState(0)
-
-//   return (
-//     <>
-//       <div className="min-h-screen bg-gray-50 p-6">
-//         <h1 className="text-2xl font-bold text-red-600">Tailwind OK</h1>
-//         <p className="mt-2 text-gray-600">Chữ này dùng utility Tailwind.</p>
-//       </div>
-//       <div>
-//         <a href="https://vite.dev" target="_blank">
-//           <img src={viteLogo} className="logo" alt="Vite logo" />
-//         </a>
-//         <a href="https://react.dev" target="_blank">
-//           <img src={reactLogo} className="logo react" alt="React logo" />
-//         </a>
-//       </div>
-//       <h1>Vite + React</h1>
-//       <div className="card">
-//         <button onClick={() => setCount((count) => count + 1)}>
-//           count is {count}
-//         </button>
-//         <p>
-//           Edit <code>src/App.jsx</code> and save to test HMR
-//         </p>
-//       </div>
-//       <p className="read-the-docs">
-//         Click on the Vite and React logos to learn more
-//       </p>
-//     </>
-//   )
-// }
-
-// export default App
-
-
 import { Routes, Route } from 'react-router-dom'
 import MainLayout from './layouts/MainLayout'
 import Home from './pages/Home'
 import NotFound from './pages/NotFound'
 
-import Login from './pages/Login'       // <-- thêm
-import Register from './pages/Register' // <-- thêm
-import Profile from './pages/Profile'   // <-- thêm
+import Login from './pages/Login'
+import Register from './pages/Register'
+import Profile from './pages/Profile'
 
-import ProtectedRoute from './components/ProtectedRoute' // <-- thêm
-import RoleRoute from './components/RoleRoute'           // <-- thêm
+import ProtectedRoute from './components/ProtectedRoute'
+import RoleRoute from './components/RoleRoute'
+
 import Catalog from './pages/Catalog'
 import MotorcycleDetail from './pages/MotorcycleDetail'
 import CartPage from './pages/Cart/CartPage'
 import CheckoutPage from './pages/Checkout/CheckoutPage'
 import PaymentResult from './pages/PaymentResult'
+
 import SellerOverview from "./components/dashboard/seller/Overview"
 import SellerOrders from "./components/dashboard/seller/Orders"
-import AdminOverview from "./components/dashboard/admin/Overview"
-import AdminOrders from './components/dashboard/admin/Orders';
-import AdminUsers from './components/dashboard/admin/Users';
-import AdminPayments from './components/dashboard/admin/Payments';
-import SellerProducts from './components/dashboard/seller/Products';
+import SellerProducts from "./components/dashboard/seller/Products"
 
-function Protected({ children, role }) {
-  const { user, loading } = useAuth()
-  if (loading) return <div className="p-6">Đang tải...</div>
-  if (!user) return <Navigate to="/login" replace />
-  if (role && user.role !== role) return <Navigate to="/" replace />
-  return children
-}
+import AdminOverview from "./components/dashboard/admin/Overview"
+import AdminOrders from './components/dashboard/admin/Orders'
+import AdminUsers from './components/dashboard/admin/Users'
+import AdminPayments from './components/dashboard/admin/Payments'
+
+
 export default function App() {
   return (
-    <MainLayout>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/catalog" element={<Catalog />} />
-        <Route path="/motorcycles/:slug" element={<MotorcycleDetail />} />
-        {/* Auth pages (public) */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+    <Routes>
+      {/* HOME — FULL WIDTH */}
+      <Route
+        path="/"
+        element={
+          <MainLayout wide>
+            <Home />
+          </MainLayout>
+        }
+      />
 
-        {/* Chỉ cần đăng nhập */}
-        <Route
-          path="/profile"
-          element={
+      {/* CATALOG / PRODUCT — GIỚI HẠN WIDTH */}
+      <Route
+        path="/catalog"
+        element={
+          <MainLayout>
+            <Catalog />
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path="/motorcycles/:slug"
+        element={
+          <MainLayout>
+            <MotorcycleDetail />
+          </MainLayout>
+        }
+      />
+
+      {/* AUTH */}
+      <Route
+        path="/login"
+        element={
+          <MainLayout>
+            <Login />
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path="/register"
+        element={
+          <MainLayout>
+            <Register />
+          </MainLayout>
+        }
+      />
+
+      {/* PROFILE */}
+      <Route
+        path="/profile"
+        element={
+          <MainLayout>
             <ProtectedRoute>
               <Profile />
             </ProtectedRoute>
-          }
-        />
+          </MainLayout>
+        }
+      />
 
-        {/* Buyer: Giỏ hàng */}
-        <Route
-          path="/cart"
-          element={
+      {/* CART / CHECKOUT */}
+      <Route
+        path="/cart"
+        element={
+          <MainLayout>
             <RoleRoute roles={['buyer']}>
               <CartPage />
             </RoleRoute>
-          }
-        />
+          </MainLayout>
+        }
+      />
 
-        {/* Buyer: Checkout */}
-        <Route
-          path="/checkout"
-          element={
+      <Route
+        path="/checkout"
+        element={
+          <MainLayout>
             <RoleRoute roles={['buyer']}>
               <CheckoutPage />
             </RoleRoute>
-          }
-        />
+          </MainLayout>
+        }
+      />
 
-        {/* Buyer: Xem kết quả thanh toán */}
-        <Route
-          path="/payment-result"
-          element={
+      <Route
+        path="/payment-result"
+        element={
+          <MainLayout>
             <RoleRoute roles={['buyer']}>
               <PaymentResult />
             </RoleRoute>
-          }
-        />
+          </MainLayout>
+        }
+      />
 
-        {/* Ví dụ route cho seller hoặc admin */}
-        <Route
-          path="/dashboard"
-          element={
+      {/* SELLER DASHBOARD */}
+      <Route
+        path="/dashboard/seller"
+        element={
+          <MainLayout>
             <RoleRoute roles={['seller', 'admin']}>
-              <div className="bg-white p-6 rounded-xl shadow">Dashboard Seller/Admin</div>
+              <SellerOverview />
             </RoleRoute>
-          }
-        />
-        {/* SELLER */}
-        <Route
-          path="/dashboard/seller"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['seller', 'admin']}>
-                <SellerOverview />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/seller/orders"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['seller', 'admin']}>
-                <SellerOrders />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/seller/products"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['seller', 'admin']}>
-                <SellerProducts />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
+          </MainLayout>
+        }
+      />
 
-        {/* ADMIN */}
-        <Route
-          path="/dashboard/admin"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['admin']}>
-                <AdminOverview />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard/admin/orders"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['admin']}>
-                <AdminOrders />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/dashboard/seller/orders"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['seller', 'admin']}>
+              <SellerOrders />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
 
-        <Route
-          path="/dashboard/admin/users"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['admin']}>
-                <AdminUsers />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
+      <Route
+        path="/dashboard/seller/products"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['seller', 'admin']}>
+              <SellerProducts />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
 
-        <Route
-          path="/dashboard/admin/payments"
-          element={
-            <ProtectedRoute>
-              <RoleRoute roles={['admin']}>
-                <AdminPayments />
-              </RoleRoute>
-            </ProtectedRoute>
-          }
-        />
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </MainLayout>
+      {/* ADMIN DASHBOARD */}
+      <Route
+        path="/dashboard/admin"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminOverview />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path="/dashboard/admin/orders"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminOrders />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path="/dashboard/admin/users"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminUsers />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+
+      <Route
+        path="/dashboard/admin/payments"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminPayments />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+
+      {/* 404 */}
+      <Route
+        path="*"
+        element={
+          <MainLayout>
+            <NotFound />
+          </MainLayout>
+        }
+      />
+    </Routes>
   )
 }
-

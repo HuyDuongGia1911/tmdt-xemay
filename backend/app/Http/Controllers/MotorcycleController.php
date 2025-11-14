@@ -57,23 +57,47 @@ class MotorcycleController extends Controller
 
     //     return response()->json($motorcycle);
     // }
+    // public function show(Motorcycle $motorcycle)
+    // {
+    //     // Buyer không được xem xe chưa active
+    //     $user = Auth::user();
+    //     if ((!$user || $user->role === 'buyer') && $motorcycle->status !== 'active') {
+    //         abort(404);
+    //     }
+
+    //     // Tạo key cache theo slug + updated_at để nếu sửa xe thì cache tự hết hạn
+    //     $slug = $motorcycle->slug;
+    //     $updatedAt = optional($motorcycle->updated_at)->timestamp;
+    //     $key = "motorcycles:detail:{$slug}:{$updatedAt}";
+
+    //     $tags = ['motorcycles', 'detail'];
+    //     $ttl = 3600; // 1 giờ
+
+    //     $cache = Cache::tags($tags);
+    //     $hit = $cache->has($key);
+
+    //     $payload = $cache->remember($key, $ttl, function () use ($motorcycle) {
+    //         $motorcycle->load(['category', 'seller', 'spec', 'inventory', 'reviews']);
+    //         return $motorcycle->toArray();
+    //     });
+
+    //     // Ghi cờ để middleware CacheHitHeader tự thêm X-Cache
+    //     app()->instance('cache.hit', $hit);
+
+    //     return response()->json($payload);
+    // }
     public function show(Motorcycle $motorcycle)
     {
-        // Buyer không được xem xe chưa active
         $user = Auth::user();
         if ((!$user || $user->role === 'buyer') && $motorcycle->status !== 'active') {
             abort(404);
         }
 
-        // Tạo key cache theo slug + updated_at để nếu sửa xe thì cache tự hết hạn
-        $slug = $motorcycle->slug;
-        $updatedAt = optional($motorcycle->updated_at)->timestamp;
-        $key = "motorcycles:detail:{$slug}:{$updatedAt}";
-
-        $tags = ['motorcycles', 'detail'];
+        // $cache = Cache::tags(['motorcycles', 'motorcycle_detail']);
+        $cache = Cache::tags(['motorcycle_detail']);
+        $key = "motorcycles:detail:{$motorcycle->id}";
         $ttl = 3600; // 1 giờ
 
-        $cache = Cache::tags($tags);
         $hit = $cache->has($key);
 
         $payload = $cache->remember($key, $ttl, function () use ($motorcycle) {
@@ -81,11 +105,10 @@ class MotorcycleController extends Controller
             return $motorcycle->toArray();
         });
 
-        // Ghi cờ để middleware CacheHitHeader tự thêm X-Cache
         app()->instance('cache.hit', $hit);
-
         return response()->json($payload);
     }
+
 
 
     // POST /api/motorcycles

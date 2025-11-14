@@ -7,28 +7,37 @@ use Illuminate\Support\Facades\Cache;
 
 class MotorcycleObserver
 {
-    private function flush()
+    private function flushOne(Motorcycle $mc)
     {
-        Cache::tags(['motorcycles', 'catalog', 'featured', 'detail'])->flush();
+        // Xóa cache chi tiết đúng ID
+        Cache::tags(['motorcycle_detail'])->forget("motorcycles:detail:{$mc->id}");
+
+        // Xóa cache catalog (danh sách) vì xe thay đổi ảnh hưởng list
+        Cache::tags(['catalog'])->flush();
     }
-    public function created(Motorcycle $m)
+
+    public function created(Motorcycle $mc)
     {
-        $this->flush();
+        $this->flushOne($mc);
     }
-    public function updated(Motorcycle $m)
+
+    public function updated(Motorcycle $mc)
     {
-        $this->flush();
+        $this->flushOne($mc);
     }
-    public function deleted(Motorcycle $m)
+
+    public function deleted(Motorcycle $mc)
     {
-        $this->flush();
+        $this->flushOne($mc);
     }
-    public function restored(Motorcycle $m)
+
+    public function restored(Motorcycle $mc)
     {
-        $this->flush();
+        $this->flushOne($mc);
     }
-    public function forceDeleted(Motorcycle $m)
+
+    public function forceDeleted(Motorcycle $mc)
     {
-        $this->flush();
+        $this->flushOne($mc);
     }
 }

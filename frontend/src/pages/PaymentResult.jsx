@@ -1,57 +1,110 @@
-import { useEffect, useState } from 'react'
-import { getOrder } from '../api/order'
+import { useEffect, useState } from "react"
+import { useSearchParams, Link } from "react-router-dom"
+import { getOrder } from "../api/order"
 
 export default function PaymentResult() {
-    const [orderId, setOrderId] = useState('')
-    const [order, setOrder] = useState(null)
-    const [loading, setLoading] = useState(false)
-    const [error, setError] = useState('')
+    const [params] = useSearchParams()
 
-    async function fetchOrder() {
-        if (!orderId) return
-        setLoading(true)
-        setError('')
-        try {
-            const o = await getOrder(orderId)
-            setOrder(o)
-        } catch (e) {
-            setOrder(null)
-            setError(e?.response?.data?.message || 'Không tìm thấy đơn hoặc không có quyền xem')
-        } finally {
-            setLoading(false)
-        }
-    }
+    const orderId = params.get("extraData")
+    const resultCode = params.get("resultCode")
+    const message = params.get("message")
+
+    const [loading, setLoading] = useState(true)
+    const [order, setOrder] = useState(null)
+    const [error, setError] = useState("")
 
     useEffect(() => {
-        const u = new URL(window.location.href)
-        const id = u.searchParams.get('orderId')
-        if (id) {
-            setOrderId(id)
-            setTimeout(fetchOrder, 0)
+        async function load() {
+            if (!orderId) {
+                setError("Không tìm thấy OrderID trong đường dẫn.")
+                setLoading(false)
+                return
+            }
+
+            try {
+                const o = await getOrder(orderId)
+                setOrder(o)
+            } catch (e) {
+                setError(e?.response?.data?.message || "Không thể tải đơn hàng.")
+            }
+            setLoading(false)
         }
-        // eslint-disable-next-line
-    }, [])
+
+        load()
+    }, [orderId])
+
+    if (loading) {
+        return (
+            <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow text-center">
+                <div>Đang tải kết quả thanh toán...</div>
+            </div>
+        )
+    }
+
+    if (!orderId) {
+        return (
+            <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow text-center">
+                <div className="text-red-600 font-semibold">Thiếu thông tin thanh toán.</div>
+                <Link to="/" className="mt-4 inline-block text-blue-600 hover:underline">
+                    Về trang chủ
+                </Link>
+            </div>
+        )
+    }
+
+    const isSuccess = resultCode === "0"
 
     return (
-        <div className="max-w-xl mx-auto bg-white p-6 rounded-xl shadow">
-            <h1 className="text-xl font-semibold mb-3">Kết quả thanh toán</h1>
-            <div className="flex gap-2 mb-3">
-                <input className="flex-1 border rounded px-3 py-2" placeholder="Nhập Order ID" value={orderId}
-                    onChange={(e) => setOrderId(e.target.value)} />
-                <button onClick={fetchOrder} className="px-4 py-2 bg-black text-white rounded">Xem</button>
+        <div className="max-w-xl mx-auto bg-white p-8 rounded-xl shadow text-center space-y-6">
+            {/* ICON STATUS */}
+            <div className="flex justify-center">
+                {isSuccess ? (
+                    <div className="w-20 h-20 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-4xl">
+                        ✓
+                    </div>
+                ) : (
+                    <div className="w-20 h-20 bg-red-100 text-red-600 rounded-full flex items-center justify-center text-4xl">
+                        ✕
+                    </div>
+                )}
             </div>
 
-            {loading && <div>Đang tải...</div>}
-            {error && <div className="text-red-600">{error}</div>}
+            {/* TITLE */}
+            <h1 className="text-2xl font-bold">
+                {isSuccess ? "Thanh toán thành công!" : "Thanh toán thất bại"}
+            </h1>
 
+            {/* MESSAGE */}
+            <p className="text-gray-600">{message}</p>
+
+            {/* INFO */}
             {order && (
-                <div className="space-y-2">
-                    <div>Mã đơn: <b>{order.code}</b> (ID: {order.id})</div>
-                    <div>Trạng thái: <b>{order.status}</b></div>
+                <div className="text-left space-y-2 bg-gray-50 p-4 rounded-xl border">
+                    <div>Mã đơn: <b>{order.code}</b></div>
+                    <div>Trạng thái đơn: <b>{order.status}</b></div>
                     <div>Thanh toán: <b>{order.payment_status}</b></div>
                     <div>Tổng tiền: <b>{Number(order.total_amount).toLocaleString()} đ</b></div>
                 </div>
             )}
+
+            {/* BUTTONS */}
+            <div className="flex justify-center gap-4 mt-4">
+                {order && (
+                    <Link
+                        to={`/orders/${order.id}`}
+                        className="px-5 py-3 bg-blue-600 text-white rounded-xl font-semibold hover:bg-blue-700 transition"
+                    >
+                        Xem đơn hàng
+                    </Link>
+                )}
+
+                <Link
+                    to="/"
+                    className="px-5 py-3 bg-gray-200 rounded-xl font-semibold hover:bg-gray-300 transition"
+                >
+                    Về trang chủ
+                </Link>
+            </div>
         </div>
     )
 }

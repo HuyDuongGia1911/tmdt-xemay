@@ -10,7 +10,7 @@ export default function Navbar() {
 
     return (
         <header className="bg-white shadow">
-            <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div className="w-full px-4 h-14 flex items-center justify-between">
                 <Link to="/" className="font-bold text-lg">Xe Máy Shop</Link>
 
                 <nav className="flex items-center gap-2">

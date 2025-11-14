@@ -8,8 +8,9 @@ use Illuminate\Support\Facades\Gate;
 // import Model + Policy
 use App\Models\Motorcycle;
 use App\Policies\MotorcyclePolicy;
-
+use App\Models\Inventory;
 use App\Observers\MotorcycleObserver;
+use App\Observers\InventoryObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -29,5 +30,6 @@ class AppServiceProvider extends ServiceProvider
         // đăng ký policy cho Motorcycle
         Gate::policy(Motorcycle::class, MotorcyclePolicy::class);
         Motorcycle::observe(MotorcycleObserver::class);
+        Inventory::observe(InventoryObserver::class);
     }
 }
