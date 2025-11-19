@@ -11,6 +11,8 @@ use App\Policies\MotorcyclePolicy;
 use App\Models\Inventory;
 use App\Observers\MotorcycleObserver;
 use App\Observers\InventoryObserver;
+use App\Models\Review;
+use App\Observers\ReviewObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,5 +33,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Motorcycle::class, MotorcyclePolicy::class);
         Motorcycle::observe(MotorcycleObserver::class);
         Inventory::observe(InventoryObserver::class);
+        Review::observe(ReviewObserver::class);
     }
 }

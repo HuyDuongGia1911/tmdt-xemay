@@ -112,7 +112,7 @@ use App\Http\Controllers\OrderController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\DashboardSellerController;
 use App\Http\Controllers\DashboardAdminController;
-
+use App\Http\Controllers\ReviewController;
 // ============ Public routes ============
 
 // ✅ Throttle nhóm auth: login/register
@@ -180,7 +180,8 @@ Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
     Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
     Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
     Route::post('/orders/checkout', [OrderController::class, 'checkout']);
-
+    // 🔥 Buyer gửi đánh giá
+    Route::post('/motorcycles/{motorcycle}/reviews', [ReviewController::class, 'store']);
     // ✅ throttle riêng cho payments.init
     Route::middleware('throttle:payments')->group(function () {
         Route::post('/payments/{order}/init', [PaymentController::class, 'init']);

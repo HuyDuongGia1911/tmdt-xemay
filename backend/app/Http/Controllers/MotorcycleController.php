@@ -101,7 +101,7 @@ class MotorcycleController extends Controller
         $hit = $cache->has($key);
 
         $payload = $cache->remember($key, $ttl, function () use ($motorcycle) {
-            $motorcycle->load(['category', 'seller', 'spec', 'inventory', 'reviews']);
+            $motorcycle->load(['category', 'seller', 'spec', 'inventory', 'reviews',  'images']);
             return $motorcycle->toArray();
         });
 

@@ -127,4 +127,11 @@ class Motorcycle extends Model
         static::saved(fn() => Cache::tags(['motorcycles', 'featured'])->flush());
         static::deleted(fn() => Cache::tags(['motorcycles', 'featured'])->flush());
     }
+    public function getThumbnailUrlAttribute($value)
+    {
+        if ($value) return $value;
+
+        // Trả URL của FE, không phải backend!
+        return env('FRONTEND_URL', 'http://localhost:5173') . '/no-image.png';
+    }
 }

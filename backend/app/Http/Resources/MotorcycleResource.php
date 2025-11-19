@@ -20,6 +20,15 @@ class MotorcycleResource extends JsonResource
             'color' => $this->color,
             'type' => $this->type,
             'thumbnail_url' => $this->thumbnail_url ?? null,
+
+
+            // ⭐ multi images
+            'images' => $this->images->map(function ($img) {
+                return [
+                    'id' => $img->id,
+                    'url' => $img->url,
+                ];
+            }),
             'average_rating' => $this->average_rating ?? null,
             'category' => [
                 'id' => optional($this->category)->id,

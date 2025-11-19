@@ -1,0 +1,221 @@
+Dưới đây là giải thích đầy đủ – rõ ràng – theo kiến trúc Laravel về tại sao phải chia nhỏ thành Controllers, Requests, Resources, Observers, Policies, Providers, Services… thay vì nhét hết vào Controller — và chúng kết nối với nhau như thế nào.
+
+❌ Nếu để hết trong Controller sẽ ra sao?
+
+Bạn sẽ gặp:
+
+• File controller dài 5000–10000 dòng
+• Không tái sử dụng được logic
+• Không test được
+• Không bảo trì được
+• Không kiểm soát được quyền truy cập
+• Không tách biệt validation – transform – business logic – database events
+
+Laravel được xây để tách từng nhiệm vụ riêng ra → “Separation of concerns”.
+
+✔️ 1. Controllers — Điều phối luồng request
+
+Nhiệm vụ:
+
+Nhận request
+
+Gọi Request để validate
+
+Gọi Service để xử lý business logic
+
+Gọi Resource để format data trả về
+
+Return response
+
+Controller không nên chứa:
+
+Validation
+
+Business logic
+
+Permission logic
+
+Format JSON
+
+Event logic
+
+Cách controller kết nối với Request & Resource:
+
+public function store(StoreMotorcycleRequest $request)
+{
+    $data = $request->validated();
+
+    $motorcycle = $this->service->create($data);
+
+    return new MotorcycleResource($motorcycle);
+}
+
+
+📌 Controller tự động dùng StoreMotorcycleRequest vì Laravel inject qua type-hint.
+
+✔️ 2. Form Requests — Xử lý VALIDATION
+
+Thay vì viết validation trong controller:
+
+$request->validate([
+   'name' => 'required',
+   'price' => 'integer|min:0',
+]);
+
+
+Ta tạo file:
+
+app/Http/Requests/StoreMotorcycleRequest.php
+
+Nhiệm vụ:
+
+Validate input
+
+Xác thực quyền (authorize)
+
+Ví dụ:
+
+public function authorize()
+{
+    return auth()->user()?->isSeller();
+}
+
+public function rules()
+{
+    return [
+        'name' => 'required|string|max:255',
+        'price' => 'required|numeric|min:0'
+    ];
+}
+
+
+💡 Laravel tự động chạy Request khi controller có biến $request dạng type-hint.
+
+✔️ 3. Resources — Chuẩn hóa dữ liệu trả về API
+
+Resource giúp bạn trả về JSON sạch đẹp:
+
+Ví dụ:
+
+return new MotorcycleResource($motorcycle);
+
+
+Trong MotorcycleResource.php:
+
+public function toArray($request)
+{
+    return [
+        'id' => $this->id,
+        'name' => $this->name,
+        'price' => $this->price,
+        'thumbnail_url' => $this->thumbnail_url,
+        'seller' => new SellerResource($this->seller),
+    ];
+}
+
+
+📌 Nếu không dùng Resource, JSON trả về sẽ lộn xộn, rò lộ trường nhạy cảm.
+
+✔️ 4. Observers — Theo dõi Model Events
+
+Dùng khi bạn muốn:
+
+Tự tính average_rating khi tạo review
+
+Tự xóa ảnh khi xóa xe
+
+Tự flush cache khi update xe
+
+Ví dụ trong MotorcycleObserver.php:
+
+public function saved(Motorcycle $motorcycle)
+{
+    Cache::tags(['motorcycles'])->flush();
+}
+
+
+Laravel tự động chạy Observer khi khai báo trong AppServiceProvider:
+
+Motorcycle::observe(MotorcycleObserver::class);
+
+✔️ 5. Policies — Kiểm soát quyền truy cập
+
+Dùng để xác định:
+
+Ai được sửa xe?
+
+Ai được xóa xe?
+
+Ai được viết review?
+
+Ví dụ MotorcyclePolicy.php:
+
+public function update(User $user, Motorcycle $motorcycle)
+{
+    return $user->id === $motorcycle->seller->user_id;
+}
+
+
+Controller dùng:
+
+$this->authorize('update', $motorcycle);
+
+
+Nếu sai → Laravel tự trả về 403.
+
+✔️ 6. Providers — Nơi đăng ký Observer, Policy, Binding services
+
+Ví dụ trong AppServiceProvider:
+
+public function boot()
+{
+    Motorcycle::observe(MotorcycleObserver::class);
+
+    Gate::policy(Motorcycle::class, MotorcyclePolicy::class);
+}
+
+
+Laravel tự động kích hoạt.
+
+✔️ 7. Services — Viết business logic
+
+Controller không nên chứa logic lớn như:
+
+Tạo xe + tạo tồn kho + log hoạt động + gửi mail
+
+Xử lý thanh toán
+
+Upload ảnh
+
+Sync inventory
+
+Tạo MotorcycleService.php:
+
+public function create(array $data)
+{
+    return DB::transaction(function () use ($data) {
+        $moto = Motorcycle::create($data);
+
+        Inventory::create(['motorcycle_id' => $moto->id]);
+
+        return $moto;
+    });
+}
+
+
+Controller gọi:
+
+$this->service->create($data);
+
+🎯 TÓM TẮT: Chúng kết nối với nhau như thế nào?
+Thành phần	Vai trò	Được gọi ở đâu?	Khi nào chạy?
+Controller	Điều phối request	Route → Controller	Mỗi request
+Request	Validate + authorize	Inject vào Controller	Trước hàm controller chạy
+Service	Business logic	Controller gọi	Khi controller gọi
+Resource	Chuẩn hoá JSON	Controller return	Khi trả response
+Policy	Kiểm tra quyền	$this->authorize()	Trước khi xử lý
+Observer	Lắng nghe Model Events	Laravel tự gọi	Khi model saved/updated/deleted
+Provider	Đăng ký observers & policies	AppServiceProvider	Khi app boot
+🎉 Bạn muốn tôi vẽ sơ đồ “flow request → controller → request → policy → service → observer → resource”?
+
+Hoặc muốn tôi áp dụng kiến trúc này cho toàn bộ module "Motorcycle" của bạn?
