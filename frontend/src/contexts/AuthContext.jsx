@@ -9,6 +9,7 @@ const AuthContext = createContext(null)
 export function AuthProvider({ children }) {
     const navigate = useNavigate()
     const [user, setUser] = useState(null)
+    const [seller, setSeller] = useState(null)
     const [token, setToken] = useState(() => localStorage.getItem(STORAGE_TOKEN_KEY) || '')
     const [loading, setLoading] = useState(true) // chờ khôi phục phiên
 
@@ -22,6 +23,7 @@ export function AuthProvider({ children }) {
             try {
                 const res = await api.get('/api/me')
                 setUser(res.data.user)
+                setSeller(res.data.seller || null)
             } catch (e) {
                 // token có vấn đề -> xóa
                 localStorage.removeItem(STORAGE_TOKEN_KEY)
@@ -49,6 +51,7 @@ export function AuthProvider({ children }) {
         localStorage.setItem(STORAGE_TOKEN_KEY, t)
         setToken(t)
         setUser(res.data.user)
+        setSeller(res.data.seller || null)
         return res.data
     }
 
@@ -56,6 +59,7 @@ export function AuthProvider({ children }) {
     async function fetchMe() {
         const res = await api.get('/api/me')
         setUser(res.data.user)
+        setSeller(res.data.seller || null)
         return res.data.user
     }
 
@@ -69,10 +73,11 @@ export function AuthProvider({ children }) {
         localStorage.removeItem(STORAGE_TOKEN_KEY)
         setToken('')
         setUser(null)
+        setSeller(null)
         navigate('/login')
     }
 
-    const value = { user, token, loading, login, register, logout, fetchMe }
+    const value = { user, seller, token, loading, login, register, logout, fetchMe }
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

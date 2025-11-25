@@ -23,8 +23,20 @@ export default function Navbar() {
                             <NavLink to="/profile" className={navItemClass}>Hồ sơ</NavLink>
 
                             {/* Chỉ seller/admin mới thấy Dashboard */}
-                            {(user.role === 'seller' || user.role === 'admin') && (
-                                <NavLink to="/dashboard" className={navItemClass}>Dashboard</NavLink>
+                            {user && (
+                                <>
+                                    {user.role === 'seller' && (
+                                        <NavLink to="/dashboard/seller" className={navItemClass}>
+                                            Dashboard
+                                        </NavLink>
+                                    )}
+
+                                    {user.role === 'admin' && (
+                                        <NavLink to="/dashboard/admin" className={navItemClass}>
+                                            Dashboard
+                                        </NavLink>
+                                    )}
+                                </>
                             )}
 
                             <button

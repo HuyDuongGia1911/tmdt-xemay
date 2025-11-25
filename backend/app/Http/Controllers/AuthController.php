@@ -86,10 +86,14 @@ class AuthController extends Controller
      */
     public function me(Request $request)
     {
+        $user = $request->user();
+
         return response()->json([
-            'user' => $request->user(),
+            'user' => $user,
+            'seller' => $user->seller,
         ]);
     }
+
 
     /**
      * Đăng xuất: thu hồi token hiện tại.

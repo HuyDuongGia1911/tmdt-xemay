@@ -27,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->alias([
             'role' => RoleMiddleware::class,
+            'mustHaveSeller' => \App\Http\Middleware\MustHaveSeller::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

@@ -25,7 +25,9 @@ import AdminOrders from './components/dashboard/admin/Orders'
 import AdminUsers from './components/dashboard/admin/Users'
 import AdminPayments from './components/dashboard/admin/Payments'
 
-
+import SellerSetup from './components/dashboard/seller/SellerSetup'
+import RequireSeller from './components/RequireSeller'
+import SellerProfile from './components/dashboard/seller/SellerProfile'
 export default function App() {
   return (
     <Routes>
@@ -129,18 +131,23 @@ export default function App() {
         element={
           <MainLayout>
             <RoleRoute roles={['seller', 'admin']}>
-              <SellerOverview />
+              <RequireSeller>
+                <SellerOverview />
+              </RequireSeller>
             </RoleRoute>
           </MainLayout>
         }
       />
+
 
       <Route
         path="/dashboard/seller/orders"
         element={
           <MainLayout>
             <RoleRoute roles={['seller', 'admin']}>
-              <SellerOrders />
+              <RequireSeller>
+                <SellerOrders />
+              </RequireSeller>
             </RoleRoute>
           </MainLayout>
         }
@@ -151,12 +158,26 @@ export default function App() {
         element={
           <MainLayout>
             <RoleRoute roles={['seller', 'admin']}>
-              <SellerProducts />
+              <RequireSeller>
+                <SellerProducts />
+              </RequireSeller>
             </RoleRoute>
           </MainLayout>
         }
       />
 
+      <Route
+        path="/dashboard/seller/profile"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['seller', 'admin']}>
+              <RequireSeller>
+                <SellerProfile />
+              </RequireSeller>
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
       {/* ADMIN DASHBOARD */}
       <Route
         path="/dashboard/admin"
@@ -201,7 +222,17 @@ export default function App() {
           </MainLayout>
         }
       />
-
+      {/* SELLER SETUP — KHÔNG REQUIRE SELLER */}
+      <Route
+        path="/dashboard/seller/setup"
+        element={
+          <MainLayout>
+            <ProtectedRoute>
+              <SellerSetup />
+            </ProtectedRoute>
+          </MainLayout>
+        }
+      />
       {/* 404 */}
       <Route
         path="*"

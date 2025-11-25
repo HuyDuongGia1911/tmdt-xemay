@@ -101,6 +101,8 @@
 
 
 
+
+
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CategoryController;
@@ -113,103 +115,111 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\DashboardSellerController;
 use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\ReviewController;
-// ============ Public routes ============
+use App\Http\Controllers\SellerSetupController;
 
-// ✅ Throttle nhóm auth: login/register
+
+// ================= PUBLIC =================
+
+// auth (login/register) - throttle group
 Route::middleware('throttle:auth')->group(function () {
     Route::post('/register', [AuthController::class, 'register']);
     Route::post('/login',    [AuthController::class, 'login']);
 });
 
-// ✅ Categories vẫn public, không throttle riêng
+// categories
 Route::get('/categories', [CategoryController::class, 'index']);
 Route::get('/categories/{id}', [CategoryController::class, 'show']);
 
-// ✅ Throttle nhóm catalog: danh sách & featured motorcycles
+// catalog
 Route::middleware('throttle:catalog')->group(function () {
     Route::get('/motorcycles', [MotorcycleCatalogController::class, 'index']);
     Route::get('/motorcycles/featured', [MotorcycleCatalogController::class, 'featured']);
 });
 
-// ✅ Chi tiết 1 xe (giữ public, vì ít tốn tài nguyên)
+// motorcycle detail
 Route::get('/motorcycles/{motorcycle:slug}', [MotorcycleController::class, 'show']);
 
-// ============ Buyer: xem đơn hàng ============
+// health
+Route::get('/health', fn() => ['status' => 'ok']);
 
-Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
-    Route::get('/orders/{order}', [OrderController::class, 'show']);
-});
 
-// Health check
-Route::get('/health', fn() => response()->json(['status' => 'ok']));
-
-// ============ Protected routes (đăng nhập) ============
+// ================= AUTHENTICATED =================
 
 Route::middleware('auth:sanctum')->group(function () {
-    Route::get('/me', [AuthController::class, 'me']);
+
+    // me, logout
+    Route::get('/me',    [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Ví dụ test phân quyền
-    Route::get('/admin/ping', fn() => response()->json(['ok' => true, 'role' => 'admin-only']))->middleware('role:admin');
-    Route::get('/seller-or-admin/ping', fn() => response()->json(['ok' => true, 'role' => 'seller-or-admin']))->middleware('role:seller,admin');
-    Route::get('/buyer/ping', fn() => response()->json(['ok' => true, 'role' => 'buyer']))->middleware('role:buyer');
-});
-
-// ============ Category CRUD (admin) ============
-Route::middleware(['auth:sanctum', 'role:admin'])->group(function () {
-    Route::post('/categories', [CategoryController::class, 'store']);
-    Route::put('/categories/{id}', [CategoryController::class, 'update']);
-    Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
-});
-
-// ============ Motorcycle CRUD (seller/admin) ============
-Route::middleware(['auth:sanctum', 'role:seller,admin'])->group(function () {
-    Route::post('/motorcycles', [MotorcycleController::class, 'store']);
-    Route::put('/motorcycles/{motorcycle}', [MotorcycleController::class, 'update']);
-    Route::delete('/motorcycles/{motorcycle}', [MotorcycleController::class, 'destroy']);
-
-    // Upload/xóa ảnh
-    Route::post('/motorcycles/{id}/images', [MotorcycleImageController::class, 'store']);
-    Route::delete('/motorcycles/{id}/images/{imageId}', [MotorcycleImageController::class, 'destroy']);
-});
-
-// ============ Cart + Checkout (buyer) ============
-Route::middleware(['auth:sanctum', 'role:buyer'])->group(function () {
-    Route::get('/cart', [CartController::class, 'show']);
-    Route::post('/cart/items', [CartController::class, 'addItem']);
-    Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
-    Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
-    Route::post('/orders/checkout', [OrderController::class, 'checkout']);
-    // 🔥 Buyer gửi đánh giá
-    Route::post('/motorcycles/{motorcycle}/reviews', [ReviewController::class, 'store']);
-    // ✅ throttle riêng cho payments.init
-    Route::middleware('throttle:payments')->group(function () {
-        Route::post('/payments/{order}/init', [PaymentController::class, 'init']);
+    // ========= SELLER SETUP (rất quan trọng) =========
+    // ❗ User đăng nhập nhưng chưa có seller vẫn được quyền truy cập route này
+    Route::post('/seller/setup', [SellerSetupController::class, 'store']);
+    // SELLER: xem / sửa thông tin cửa hàng (yêu cầu đã có seller)
+    Route::middleware('mustHaveSeller')->group(function () {
+        Route::get('/seller/profile', [SellerSetupController::class, 'show']);
+        Route::put('/seller/profile', [SellerSetupController::class, 'update']);
     });
-});
+    // ========= BUYER =========
+    Route::middleware('role:buyer')->group(function () {
+        Route::get('/orders/{order}', [OrderController::class, 'show']);
 
-// ============ IPN / Webhook ============
-// (MoMo IPN có throttle riêng; VNPAY dùng chung tạm)
-Route::middleware('throttle:ipn')->group(function () {
-    Route::post('/payments/momo/ipn', [PaymentController::class, 'momoIpn']);
-    Route::match(['get', 'post'], '/payments/vnpay/ipn', [PaymentController::class, 'vnpayIpn']);
-});
+        // cart + checkout
+        Route::get('/cart', [CartController::class, 'show']);
+        Route::post('/cart/items', [CartController::class, 'addItem']);
+        Route::patch('/cart/items/{id}', [CartController::class, 'updateItem']);
+        Route::delete('/cart/items/{id}', [CartController::class, 'removeItem']);
+        Route::post('/orders/checkout', [OrderController::class, 'checkout']);
 
-// ============ Dashboards ============
-Route::middleware(['auth:sanctum'])->group(function () {
-    // SELLER
-    Route::prefix('dashboard/seller')->middleware('role:seller,admin')->group(function () {
+        // reviews
+        Route::post('/motorcycles/{motorcycle}/reviews', [ReviewController::class, 'store']);
+
+        // payments.init (throttle payments)
+        Route::middleware('throttle:payments')->post('/payments/{order}/init', [PaymentController::class, 'init']);
+    });
+
+    // ========= CATEGORY CRUD (ADMIN) =========
+    Route::middleware('role:admin')->group(function () {
+        Route::post('/categories', [CategoryController::class, 'store']);
+        Route::put('/categories/{id}', [CategoryController::class, 'update']);
+        Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+    });
+
+    // ========= MOTORCYCLE CRUD (seller/admin) =========
+    Route::middleware(['role:seller,admin'])->group(function () {
+
+        Route::post('/motorcycles', [MotorcycleController::class, 'store']);
+        Route::put('/motorcycles/{motorcycle}', [MotorcycleController::class, 'update']);
+        Route::delete('/motorcycles/{motorcycle}', [MotorcycleController::class, 'destroy']);
+
+        // images
+        Route::get('/motorcycles/{id}/images', [MotorcycleImageController::class, 'index']);
+        Route::post('/motorcycles/{id}/images', [MotorcycleImageController::class, 'store']);
+        Route::post('/motorcycles/{id}/images/link', [MotorcycleImageController::class, 'storeFromLink']);
+        Route::patch('/motorcycles/{id}/images/{imageId}/thumbnail', [MotorcycleImageController::class, 'setThumbnail']);
+        Route::delete('/motorcycles/{id}/images/{imageId}', [MotorcycleImageController::class, 'destroy']);
+    });
+
+    // ========= DASHBOARD SELLER (must have seller) =========
+    Route::middleware(['mustHaveSeller'])->prefix('dashboard/seller')->group(function () {
         Route::get('/overview', [DashboardSellerController::class, 'overview']);
         Route::get('/orders',   [DashboardSellerController::class, 'orders']);
         Route::get('/motorcycles', [DashboardSellerController::class, 'motorcycles']);
         Route::patch('/motorcycles/{id}', [DashboardSellerController::class, 'updateMotorcycle']);
     });
 
-    // ADMIN
+    // ========= DASHBOARD ADMIN =========
     Route::prefix('dashboard/admin')->middleware('role:admin')->group(function () {
         Route::get('/overview', [DashboardAdminController::class, 'overview']);
         Route::get('/orders',   [DashboardAdminController::class, 'orders']);
         Route::get('/users',    [DashboardAdminController::class, 'users']);
         Route::get('/payments', [DashboardAdminController::class, 'payments']);
     });
+});
+
+
+// ================= IPN =================
+
+Route::middleware('throttle:ipn')->group(function () {
+    Route::post('/payments/momo/ipn', [PaymentController::class, 'momoIpn']);
+    Route::match(['get', 'post'], '/payments/vnpay/ipn', [PaymentController::class, 'vnpayIpn']);
 });
