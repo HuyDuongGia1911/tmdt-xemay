@@ -15,16 +15,18 @@ class Motorcycle extends Model
     protected $fillable = [
         'seller_id',
         'category_id',
+        'brand_id',
+        'color_id',
         'name',
         'slug',
-        'brand',
+        'brand',          // giữ để không vỡ logic cũ (lưu tên brand)
         'price',
         'condition',
         'status',
         'thumbnail_url',
-        'type',
         'average_rating'
     ];
+
 
     public function seller()
     {
@@ -115,7 +117,6 @@ class Motorcycle extends Model
             ->whereInCsv('brand', $f['brand'] ?? null)
             ->whereInCsv('condition', $f['condition'] ?? null)
             ->whereInCsv('color', $f['color'] ?? null)
-            ->whereInCsv('type', $f['type'] ?? null)
             ->range('price', $f['price_min'] ?? null, $f['price_max'] ?? null)
             ->range('year', $f['year_min'] ?? null, $f['year_max'] ?? null)
             ->hasInventory($f['has_inventory'] ?? null)
@@ -133,5 +134,14 @@ class Motorcycle extends Model
 
         // Trả URL của FE, không phải backend!
         return env('FRONTEND_URL', 'http://localhost:5173') . '/no-image.png';
+    }
+    public function brand()
+    {
+        return $this->belongsTo(Brand::class);
+    }
+
+    public function color()
+    {
+        return $this->belongsTo(Color::class);
     }
 }

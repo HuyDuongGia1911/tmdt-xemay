@@ -28,6 +28,14 @@ import AdminPayments from './components/dashboard/admin/Payments'
 import SellerSetup from './components/dashboard/seller/SellerSetup'
 import RequireSeller from './components/RequireSeller'
 import SellerProfile from './components/dashboard/seller/SellerProfile'
+
+import SellerProductCreate from './components/dashboard/seller/SellerProductCreate'
+
+
+import SellerProductEdit from './components/dashboard/seller/SellerProductEdit';
+
+import AdminBrands from "./components/dashboard/admin/brands/AdminBrandList";
+import AdminCategories from "./components/dashboard/admin/categories/AdminCategoryList";
 export default function App() {
   return (
     <Routes>
@@ -178,6 +186,32 @@ export default function App() {
           </MainLayout>
         }
       />
+
+      <Route
+        path="/dashboard/seller/products/new"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['seller', 'admin']}>
+              <RequireSeller>
+                <SellerProductCreate />
+              </RequireSeller>
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/dashboard/seller/products/:id/edit"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['seller', 'admin']}>
+              <RequireSeller>
+                <SellerProductEdit />
+              </RequireSeller>
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+
       {/* ADMIN DASHBOARD */}
       <Route
         path="/dashboard/admin"
@@ -218,6 +252,26 @@ export default function App() {
           <MainLayout>
             <RoleRoute roles={['admin']}>
               <AdminPayments />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/dashboard/admin/brands"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminBrands />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/dashboard/admin/categories"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminCategories />
             </RoleRoute>
           </MainLayout>
         }

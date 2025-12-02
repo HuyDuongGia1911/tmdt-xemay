@@ -57,7 +57,22 @@ class MotorcycleCatalogController extends Controller
         $payload = $cache->remember($cacheKey, $ttlSeconds, function () use ($filters, $page, $perPage) {
             $query = Motorcycle::query()
                 ->with(['category:id,name', 'seller:id,shop_name', 'inventory:id,motorcycle_id,stock'])
-                ->select(['id', 'slug', 'name', 'brand', 'price', 'year', 'condition', 'color', 'type', 'average_rating', 'category_id', 'seller_id', 'created_at'])
+                ->select([
+                    'id',
+                    'slug',
+                    'name',
+                    'brand',
+                    'price',
+                    'year',
+                    'condition',
+                    'color',
+                    'type',
+                    'average_rating',
+                    'category_id',
+                    'seller_id',
+                    'created_at',
+                    'thumbnail_url'
+                ])
                 ->applyFilters($filters);
 
             $paginator = $query->paginate(perPage: $perPage, page: $page);
@@ -87,9 +102,29 @@ class MotorcycleCatalogController extends Controller
 
         $items = Cache::tags(['motorcycles', 'featured'])->remember($cacheKey, $ttl, function () use ($limit, $sort) {
             $q = Motorcycle::query()
-                ->with(['category:id,name', 'seller:id,shop_name'])
-                ->select(['id', 'slug', 'name', 'brand', 'price', 'year', 'condition', 'color', 'type', 'average_rating', 'category_id', 'seller_id', 'created_at'])
+                ->with([
+                    'category:id,name',
+                    'seller:id,shop_name',
+                    'images'
+                ])
+                ->select([
+                    'id',
+                    'slug',
+                    'name',
+                    'brand',
+                    'price',
+                    'year',
+                    'condition',
+                    'color',
+                    'type',
+                    'average_rating',
+                    'category_id',
+                    'seller_id',
+                    'created_at',
+                    'thumbnail_url'
+                ])
                 ->active();
+
 
             $q = match ($sort) {
                 'price_asc' => $q->orderBy('price', 'asc'),

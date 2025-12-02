@@ -52,7 +52,7 @@ class MotorcycleImageController extends Controller
             $motorcycle->save();
         }
         Cache::tags(['motorcycle_detail'])->forget("motorcycles:detail:{$motorcycle->id}");
-
+        Cache::tags(['motorcycles', 'catalog', 'featured'])->flush();  // <— thêm
         return response()->json($image, 201);
     }
 
@@ -66,7 +66,8 @@ class MotorcycleImageController extends Controller
 
         $motorcycle->thumbnail_url = $image->url;
         $motorcycle->save();
-
+        // flush cache catalog
+        Cache::tags(['motorcycles', 'catalog', 'featured'])->flush();
         return response()->json([
             'message' => 'Thumbnail updated',
             'thumbnail_url' => $motorcycle->thumbnail_url,
@@ -98,7 +99,7 @@ class MotorcycleImageController extends Controller
         $image->delete();
 
         Cache::tags(['motorcycle_detail'])->forget("motorcycles:detail:{$motorcycle->id}");
-
+        Cache::tags(['motorcycles', 'catalog', 'featured'])->flush();  // <— thêm
         return response()->json(['message' => 'Image deleted']);
     }
     public function storeFromLink(Request $request, $id)
@@ -120,6 +121,7 @@ class MotorcycleImageController extends Controller
             $motorcycle->save();
         }
         Cache::tags(['motorcycle_detail'])->forget("motorcycles:detail:{$motorcycle->id}");
+        Cache::tags(['motorcycles', 'catalog', 'featured'])->flush();  // <— thêm
         return response()->json($image, 201);
     }
 }

@@ -23,9 +23,12 @@ export default function Shell({ children }) {
                     {role === "admin" && (
                         <>
                             <div className="px-2 mt-4 text-xs text-gray-500 uppercase">Admin</div>
+
                             <NavLink to="/dashboard/admin" className="block px-4 py-2 hover:bg-gray-100">Overview</NavLink>
                             <NavLink to="/dashboard/admin/orders" className="block px-4 py-2 hover:bg-gray-100">Orders</NavLink>
                             <NavLink to="/dashboard/admin/users" className="block px-4 py-2 hover:bg-gray-100">Users</NavLink>
+                            <NavLink to="/dashboard/admin/brands" className="block px-4 py-2 hover:bg-gray-100">Brands</NavLink>
+                            <NavLink to="/dashboard/admin/categories" className="block px-4 py-2 hover:bg-gray-100">Categories</NavLink>
                             <NavLink to="/dashboard/admin/payments" className="block px-4 py-2 hover:bg-gray-100">Payments</NavLink>
                         </>
                     )}

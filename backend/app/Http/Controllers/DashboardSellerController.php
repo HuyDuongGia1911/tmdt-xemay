@@ -127,7 +127,7 @@ class DashboardSellerController extends Controller
 
         $validated = $request->validate([
             'price'  => 'nullable|integer|min:0',
-            'status' => 'nullable|in:active,inactive',
+            'status' => 'nullable|in:active,draft',
             'stock'  => 'nullable|integer|min:0'
         ]);
 
@@ -147,5 +147,39 @@ class DashboardSellerController extends Controller
         });
 
         return response()->json(['message' => 'updated']);
+    }
+    /**
+     * GET /api/dashboard/seller/motorcycles/{id}
+     * - Lấy chi tiết 1 sản phẩm của seller để edit
+     */
+    public function showMotorcycle($id)
+    {
+        $userId = Auth::id();
+
+        $mc = Motorcycle::with(['category', 'brand', 'color', 'spec', 'inventory'])
+            ->whereHas('seller', fn($q) => $q->where('user_id', $userId))
+            ->findOrFail($id);
+
+        return response()->json($mc);
+    }
+
+    /**
+     * DELETE /api/dashboard/seller/motorcycles/{id}
+     * - Xóa 1 sản phẩm (soft delete)
+     */
+    public function destroyMotorcycle($id)
+    {
+        $user = Auth::user();
+        if (!in_array($user->role, ['seller', 'admin'])) {
+            return response()->json(['message' => 'Forbidden'], 403);
+        }
+
+        $mc = Motorcycle::where('id', $id)
+            ->whereHas('seller', fn($q) => $q->where('user_id', Auth::id()))
+            ->firstOrFail();
+
+        $mc->delete(); // Soft delete, các quan hệ FK cascade sẽ tự xử lý
+
+        return response()->json(['message' => 'deleted']);
     }
 }

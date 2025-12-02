@@ -116,7 +116,8 @@ use App\Http\Controllers\DashboardSellerController;
 use App\Http\Controllers\DashboardAdminController;
 use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SellerSetupController;
-
+use App\Http\Controllers\BrandController;
+use App\Http\Controllers\ColorController;
 
 // ================= PUBLIC =================
 
@@ -158,6 +159,9 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::middleware('mustHaveSeller')->group(function () {
         Route::get('/seller/profile', [SellerSetupController::class, 'show']);
         Route::put('/seller/profile', [SellerSetupController::class, 'update']);
+        Route::post('/seller/profile/logo-upload', [SellerSetupController::class, 'uploadLogo']);
+        Route::post('/seller/profile/logo-url', [SellerSetupController::class, 'setLogoUrl']);
+        Route::delete('/seller/profile/logo', [SellerSetupController::class, 'deleteLogo']);
     });
     // ========= BUYER =========
     Route::middleware('role:buyer')->group(function () {
@@ -177,11 +181,24 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::middleware('throttle:payments')->post('/payments/{order}/init', [PaymentController::class, 'init']);
     });
 
-    // ========= CATEGORY CRUD (ADMIN) =========
+
     Route::middleware('role:admin')->group(function () {
+        // ========= CATEGORY CRUD (ADMIN) =========
         Route::post('/categories', [CategoryController::class, 'store']);
         Route::put('/categories/{id}', [CategoryController::class, 'update']);
         Route::delete('/categories/{id}', [CategoryController::class, 'destroy']);
+        // ===== Brand CRUD =====
+        Route::get('/admin/brands/{id}', [BrandController::class, 'show']);
+        Route::post('/admin/brands', [BrandController::class, 'store']);
+        Route::put('/admin/brands/{id}', [BrandController::class, 'update']);
+        Route::delete('/admin/brands/{id}', [BrandController::class, 'destroy']);
+
+        Route::post('/admin/brands/{id}/logo-upload', [BrandController::class, 'uploadLogo']);
+        Route::post('/admin/brands/{id}/logo-url', [BrandController::class, 'setLogoUrl']);
+
+        // ===== Category upload icon =====
+        Route::post('/admin/categories/{id}/icon-upload', [CategoryController::class, 'uploadIcon']);
+        Route::post('/admin/categories/{id}/icon-url', [CategoryController::class, 'setIconUrl']);
     });
 
     // ========= MOTORCYCLE CRUD (seller/admin) =========
@@ -197,14 +214,19 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/motorcycles/{id}/images/link', [MotorcycleImageController::class, 'storeFromLink']);
         Route::patch('/motorcycles/{id}/images/{imageId}/thumbnail', [MotorcycleImageController::class, 'setThumbnail']);
         Route::delete('/motorcycles/{id}/images/{imageId}', [MotorcycleImageController::class, 'destroy']);
+        // tạo màu mới
+        Route::post('/colors', [ColorController::class, 'store']);
     });
 
     // ========= DASHBOARD SELLER (must have seller) =========
     Route::middleware(['mustHaveSeller'])->prefix('dashboard/seller')->group(function () {
         Route::get('/overview', [DashboardSellerController::class, 'overview']);
         Route::get('/orders',   [DashboardSellerController::class, 'orders']);
+
         Route::get('/motorcycles', [DashboardSellerController::class, 'motorcycles']);
+        Route::get('/motorcycles/{id}', [DashboardSellerController::class, 'showMotorcycle']);
         Route::patch('/motorcycles/{id}', [DashboardSellerController::class, 'updateMotorcycle']);
+        Route::delete('/motorcycles/{id}', [DashboardSellerController::class, 'destroyMotorcycle']);
     });
 
     // ========= DASHBOARD ADMIN =========
@@ -216,7 +238,8 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 });
 
-
+Route::get('/brands', [BrandController::class, 'index']);
+Route::get('/colors', [ColorController::class, 'index']);
 // ================= IPN =================
 
 Route::middleware('throttle:ipn')->group(function () {

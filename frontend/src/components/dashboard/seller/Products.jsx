@@ -1,10 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import Shell from '../Shell';
-import { getSellerMotorcycles, patchSellerMotorcycle } from '../../../api/dashboard';
+import { getSellerMotorcycles, patchSellerMotorcycle, deleteSellerMotorcycle } from '../../../api/dashboard';
+import { useNavigate } from 'react-router-dom';
 import SellerMotorcycleImagesModal from "./SellerMotorcycleImagesModal";
+import { Link } from 'react-router-dom';
 export default function Products() {
     const [q, setQ] = useState('');
+    const navigate = useNavigate();
     const [status, setStatus] = useState('');
+    const [deletingId, setDeletingId] = useState(null);
     const [page, setPage] = useState(1);
     const [resp, setResp] = useState(null);
     const [savingId, setSavingId] = useState(null);
@@ -47,7 +51,22 @@ export default function Products() {
             setError(e?.response?.data?.message || e.message);
         }
     }
+    async function handleDelete(item) {
+        if (!window.confirm(`Bạn chắc chắn muốn xóa sản phẩm "${item.name}"?`)) {
+            return;
+        }
 
+        setDeletingId(item.id);
+        setError(null);
+        try {
+            await deleteSellerMotorcycle(item.id);
+            await load();
+        } catch (e) {
+            setError(e?.response?.data?.message || e.message);
+        } finally {
+            setDeletingId(null);
+        }
+    }
     useEffect(() => { load(); }, [q, status, page, perPage]);
 
     function updateLocal(id, fields) {
@@ -92,6 +111,15 @@ export default function Products() {
                     <p className="text-sm text-gray-500 mt-1">
                         Quản lý giá, tồn kho và trạng thái hiển thị của từng xe máy.
                     </p>
+                </div>
+
+                <div className="mt-2 md:mt-0 flex justify-start md:justify-end">
+                    <Link
+                        to="/dashboard/seller/products/new"
+                        className="inline-flex items-center px-4 py-2 rounded-lg bg-black text-white text-sm hover:opacity-90"
+                    >
+                        + Thêm sản phẩm
+                    </Link>
                 </div>
             </div>
 
@@ -211,6 +239,15 @@ export default function Products() {
                                         >
                                             Ảnh
                                         </button>
+
+                                        <button
+                                            type="button"
+                                            className="px-3 py-1 rounded-lg border text-xs hover:bg-gray-50"
+                                            onClick={() => navigate(`/dashboard/seller/products/${item.id}/edit`)}
+                                        >
+                                            Sửa
+                                        </button>
+
                                         <button
                                             disabled={savingId === item.id}
                                             className="px-3 py-1 rounded-lg bg-black text-white text-xs hover:opacity-90 disabled:opacity-60"
@@ -218,8 +255,18 @@ export default function Products() {
                                         >
                                             {savingId === item.id ? 'Đang lưu...' : 'Lưu'}
                                         </button>
+
+                                        <button
+                                            type="button"
+                                            disabled={deletingId === item.id}
+                                            className="px-3 py-1 rounded-lg bg-red-600 text-white text-xs hover:bg-red-700 disabled:opacity-60"
+                                            onClick={() => handleDelete(item)}
+                                        >
+                                            {deletingId === item.id ? 'Đang xóa...' : 'Xóa'}
+                                        </button>
                                     </div>
                                 </td>
+
                             </tr>
                         ))}
 

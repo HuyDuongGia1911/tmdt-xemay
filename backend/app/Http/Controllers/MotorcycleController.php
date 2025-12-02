@@ -10,6 +10,9 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Str;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Cache;
+use App\Models\Spec;
+use App\Models\Brand;
+use App\Models\Color;
 
 class MotorcycleController extends Controller
 {
@@ -112,9 +115,9 @@ class MotorcycleController extends Controller
 
 
     // POST /api/motorcycles
+    // POST /api/motorcycles
     public function store(StoreMotorcycleRequest $request)
     {
-
         $this->authorize('create', Motorcycle::class);
 
         $data = $request->validated();
@@ -123,14 +126,60 @@ class MotorcycleController extends Controller
             $data['slug'] = Str::slug($data['name']);
         }
 
-        $data['seller_id'] = Auth::user()->seller->id;
+        $user = Auth::user();
+        $data['seller_id'] = $user->seller->id;
         $data['status'] = $data['status'] ?? 'draft';
+
+        // Lấy brand để set tên brand text (phục vụ filter cũ)
+        $brand = Brand::findOrFail($data['brand_id']);
+        $data['brand'] = $brand->name;
+
+        // Lấy color (nếu có) để set text color (tuỳ chọn)
+        $colorName = null;
+        if (!empty($data['color_id'])) {
+            $color = Color::find($data['color_id']);
+            if ($color) {
+                // bạn có thể dùng $color->name hoặc $color->code tuỳ ý
+                $colorName = $color->name;
+            }
+        }
+
+        // specData: dùng year + colorName (nếu có)
+        $specData = [
+            'engine_cc' => $data['engine_cc'] ?? null,
+            'power_hp'  => $data['power_hp'] ?? null,
+            'torque_nm' => $data['torque_nm'] ?? null,
+            'weight_kg' => $data['weight_kg'] ?? null,
+            'year'      => $data['year'] ?? null,
+            'color'     => $colorName,
+        ];
+
+        // nếu bạn có cột color text trong motorcycles thì lưu thêm:
+        if ($colorName !== null) {
+            $data['color'] = $colorName;
+        }
+
+        // bỏ các field spec ra khỏi $data để tránh lỗi fillable
+        unset(
+            $data['engine_cc'],
+            $data['power_hp'],
+            $data['torque_nm'],
+            $data['weight_kg']
+        );
 
         $motorcycle = Motorcycle::create($data);
 
-        return response()->json($motorcycle->load(['category', 'seller']), 201);
+        $specData['motorcycle_id'] = $motorcycle->id;
+        Spec::create($specData);
+
+        return response()->json(
+            $motorcycle->load(['category', 'seller', 'brand', 'color']),
+            201
+        );
     }
 
+
+    // PUT /api/motorcycles/{motorcycle}
     // PUT /api/motorcycles/{motorcycle}
     public function update(UpdateMotorcycleRequest $request, Motorcycle $motorcycle)
     {
@@ -142,9 +191,55 @@ class MotorcycleController extends Controller
             $data['slug'] = Str::slug($data['name']);
         }
 
+        // brand_id -> brand name
+        if (isset($data['brand_id'])) {
+            $brand = Brand::findOrFail($data['brand_id']);
+            $data['brand'] = $brand->name;
+        }
+
+        // color_id -> color name (text) cho backward-compat
+        $colorName = null;
+        if (array_key_exists('color_id', $data) && !empty($data['color_id'])) {
+            $color = Color::find($data['color_id']);
+            if ($color) {
+                $colorName = $color->name;
+            }
+        }
+        if ($colorName !== null) {
+            $data['color'] = $colorName;
+        }
+
+        // spec data (nếu gửi kèm)
+        $specData = [
+            'engine_cc' => $data['engine_cc'] ?? null,
+            'power_hp'  => $data['power_hp'] ?? null,
+            'torque_nm' => $data['torque_nm'] ?? null,
+            'weight_kg' => $data['weight_kg'] ?? null,
+            'year'      => $data['year'] ?? null,
+            'color'     => $colorName,
+        ];
+
+        unset(
+            $data['engine_cc'],
+            $data['power_hp'],
+            $data['torque_nm'],
+            $data['weight_kg']
+        );
+
         $motorcycle->update($data);
 
-        return response()->json($motorcycle->load(['category', 'seller']));
+        // update / tạo mới spec
+        $spec = $motorcycle->spec;
+        if ($spec) {
+            $spec->update($specData);
+        } else {
+            $specData['motorcycle_id'] = $motorcycle->id;
+            Spec::create($specData);
+        }
+
+        return response()->json(
+            $motorcycle->load(['category', 'seller', 'brand', 'color', 'spec'])
+        );
     }
 
     // DELETE /api/motorcycles/{motorcycle}

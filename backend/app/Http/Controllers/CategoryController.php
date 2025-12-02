@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use App\Models\Category;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 
 class CategoryController extends Controller
 {
@@ -101,7 +102,73 @@ class CategoryController extends Controller
     public function destroy($id)
     {
         $category = Category::findOrFail($id);
+
+        // XÓA FILE ICON nếu là file local
+        if ($category->icon_url && str_contains($category->icon_url, '/storage/')) {
+            $oldPath = str_replace(env('APP_URL') . '/storage/', '', $category->icon_url);
+            Storage::disk('public')->delete($oldPath);
+        }
+
         $category->delete();
         return response()->json(['message' => 'Deleted']);
+    }
+
+    // POST /admin/categories/{id}/icon-upload
+    public function uploadIcon(Request $request, $id)
+    {
+        $category = Category::findOrFail($id);
+
+        $request->validate([
+            'icon' => 'required|image|max:2048'
+        ]);
+
+        // 1) LƯU ICON CŨ TRƯỚC KHI UPDATE
+        $oldIcon = $category->icon_url;
+
+        // 2) UPLOAD ICON MỚI
+        $path = $request->file('icon')->store('categories', 'public');
+        $url = env('APP_URL') . '/storage/' . $path;
+
+        $category->icon_url = $url;
+        $category->save();
+
+        // 3) XÓA FILE CŨ
+        if ($oldIcon && str_contains($oldIcon, '/storage/')) {
+            $oldPath = str_replace(env('APP_URL') . '/storage/', '', $oldIcon);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return response()->json([
+            'message' => 'Icon uploaded',
+            'icon_url' => $url
+        ]);
+    }
+
+    // POST /admin/categories/{id}/icon-url
+    public function setIconUrl(Request $request, $id)
+    {
+        $category = Category::findOrFail($id);
+
+        $request->validate([
+            'url' => 'required|url'
+        ]);
+
+        // 1) LƯU ICON CŨ TRƯỚC KHI SET URL MỚI
+        $oldIcon = $category->icon_url;
+
+        // 2) UPDATE URL
+        $category->icon_url = $request->url;
+        $category->save();
+
+        // 3) XÓA FILE CŨ (nếu là local)
+        if ($oldIcon && str_contains($oldIcon, '/storage/')) {
+            $oldPath = str_replace(env('APP_URL') . '/storage/', '', $oldIcon);
+            Storage::disk('public')->delete($oldPath);
+        }
+
+        return response()->json([
+            'message' => 'Icon URL updated',
+            'icon_url' => $category->icon_url
+        ]);
     }
 }

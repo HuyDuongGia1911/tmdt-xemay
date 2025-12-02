@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import Shell from '../Shell';
-import { getSellerProfile, updateSellerProfile } from '../../../api/seller';
+import { getSellerProfile, updateSellerProfile, uploadSellerLogo, setSellerLogoUrl, deleteSellerLogo } from '../../../api/seller';
 import { useAuth } from '../../../contexts/AuthContext';
 
 export default function SellerProfile() {
@@ -109,19 +109,77 @@ export default function SellerProfile() {
                                 />
                             </div>
 
-                            <div>
-                                <label className="block font-medium mb-1">
-                                    Logo URL (tùy chọn)
-                                </label>
-                                <input
-                                    type="text"
-                                    name="logo_url"
-                                    value={form.logo_url}
-                                    onChange={handleChange}
-                                    placeholder="https://example.com/logo.png"
-                                    className="border px-3 py-2 rounded w-full"
-                                />
+                            {/* LOGO BLOCK */}
+                            <div className="border p-4 rounded-lg bg-gray-50 space-y-3">
+                                <label className="block font-medium mb-1">Logo cửa hàng</label>
+
+                                {/* Preview */}
+                                {form.logo_url ? (
+                                    <div className="flex items-center gap-3">
+                                        <img
+                                            src={form.logo_url}
+                                            className="w-20 h-20 object-cover border rounded"
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                await deleteSellerLogo();
+                                                setForm(prev => ({ ...prev, logo_url: "" }));
+                                            }}
+                                            className="px-3 py-1 bg-red-600 text-white rounded text-sm"
+                                        >
+                                            Xóa logo
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <p className="text-gray-500 text-sm">Chưa có logo</p>
+                                )}
+
+                                {/* Upload file */}
+                                <div>
+                                    <label className="text-sm mb-1 block">Tải lên từ file</label>
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        onChange={async (e) => {
+                                            if (!e.target.files[0]) return;
+                                            await uploadSellerLogo(e.target.files[0]);
+                                            const res = await getSellerProfile();
+                                            setForm(prev => ({ ...prev, logo_url: res.data.logo_url }));
+                                            e.target.value = null;
+                                        }}
+                                    />
+                                </div>
+
+                                {/* Set URL */}
+                                <div>
+                                    <label className="text-sm mb-1 block">Hoặc dùng URL</label>
+                                    <div className="flex gap-2">
+                                        <input
+                                            type="text"
+                                            className="border px-3 py-2 rounded w-full"
+                                            placeholder="https://example.com/logo.png"
+                                            value={form.logo_url}
+                                            onChange={(e) =>
+                                                setForm(prev => ({ ...prev, logo_url: e.target.value }))
+                                            }
+                                        />
+                                        <button
+                                            type="button"
+                                            onClick={async () => {
+                                                if (!form.logo_url) return;
+                                                await setSellerLogoUrl(form.logo_url);
+                                                const res = await getSellerProfile();
+                                                setForm(prev => ({ ...prev, logo_url: res.data.logo_url }));
+                                            }}
+                                            className="px-3 py-2 bg-black text-white rounded"
+                                        >
+                                            Lưu
+                                        </button>
+                                    </div>
+                                </div>
                             </div>
+
 
                             <button
                                 disabled={saving}

@@ -1,5 +1,5 @@
 import http from './http'; // axios instance có baseURL + interceptor Bearer từ localStorage
-
+import api from '../lib/axios';
 // SELLER
 export const getSellerOverview = (range = '30d') =>
     http.get('/dashboard/seller/overview', { params: { range } });
@@ -46,3 +46,12 @@ export const getAdminUsers = (params = {}) =>
 
 export const getAdminPayments = (params = {}) =>
     http.get('/dashboard/admin/payments', { params });
+// NEW: lấy chi tiết 1 xe cho form edit
+export function getSellerMotorcycle(id) {
+    return api.get(`/api/dashboard/seller/motorcycles/${id}`);
+}
+
+// NEW: xóa 1 xe
+export function deleteSellerMotorcycle(id) {
+    return api.delete(`/api/dashboard/seller/motorcycles/${id}`);
+}
