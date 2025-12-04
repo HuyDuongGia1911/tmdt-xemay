@@ -19,7 +19,7 @@ class Motorcycle extends Model
         'color_id',
         'name',
         'slug',
-        'brand',          // giữ để không vỡ logic cũ (lưu tên brand)
+
         'price',
         'condition',
         'status',
@@ -109,19 +109,23 @@ class Motorcycle extends Model
 
     public function scopeApplyFilters(Builder $q, array $f): Builder
     {
+        $brandValues = null;
+        if (!empty($f['brand'])) {
+            $brandValues = is_array($f['brand']) ? $f['brand'] : [$f['brand']];
+        }
         return $q
             ->active()
             ->when(isset($f['category_id']), fn($qq) => $qq->where('category_id', $f['category_id']))
             ->when(isset($f['seller_id']), fn($qq) => $qq->where('seller_id', $f['seller_id']))
+            ->when(isset($f['brand_id']), fn($qq) => $qq->where('brand_id', $f['brand_id']))
             ->search($f['q'] ?? null)
-            ->whereInCsv('brand', $f['brand'] ?? null)
+            ->whereInCsv('brand', $brandValues)
             ->whereInCsv('condition', $f['condition'] ?? null)
             ->whereInCsv('color', $f['color'] ?? null)
             ->range('price', $f['price_min'] ?? null, $f['price_max'] ?? null)
             ->range('year', $f['year_min'] ?? null, $f['year_max'] ?? null)
             ->hasInventory($f['has_inventory'] ?? null)
-            ->ratingMin($f['rating_min'] ?? null)
-            ->sortBy($f['sort'] ?? 'latest');
+            ->ratingMin($f['rating_min'] ?? null);
     }
     protected static function booted()
     {

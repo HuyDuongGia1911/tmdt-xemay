@@ -28,5 +28,14 @@ class RouteServiceProvider extends ServiceProvider
         RateLimiter::for('ipn', function (Request $request) {
             return Limit::perMinute(60)->by($request->ip());
         });
+        RateLimiter::for('contact', function ($request) {
+            return [
+                // Mỗi IP chỉ được gửi 5 request / phút
+                Limit::perMinute(5)->by($request->ip()),
+
+                // Và tối đa 30 request / giờ
+                Limit::perHour(30)->by($request->ip()),
+            ];
+        });
     }
 }

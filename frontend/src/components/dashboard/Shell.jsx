@@ -30,6 +30,7 @@ export default function Shell({ children }) {
                             <NavLink to="/dashboard/admin/brands" className="block px-4 py-2 hover:bg-gray-100">Brands</NavLink>
                             <NavLink to="/dashboard/admin/categories" className="block px-4 py-2 hover:bg-gray-100">Categories</NavLink>
                             <NavLink to="/dashboard/admin/payments" className="block px-4 py-2 hover:bg-gray-100">Payments</NavLink>
+                            <NavLink to="/dashboard/admin/contacts" className="block px-4 py-2 hover:bg-gray-100">Contacts</NavLink>
                         </>
                     )}
                 </nav>

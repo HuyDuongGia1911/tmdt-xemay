@@ -36,6 +36,9 @@ import SellerProductEdit from './components/dashboard/seller/SellerProductEdit';
 
 import AdminBrands from "./components/dashboard/admin/brands/AdminBrandList";
 import AdminCategories from "./components/dashboard/admin/categories/AdminCategoryList";
+import About from './pages/About'
+import Contact from './pages/Contact'
+import AdminContacts from './components/dashboard/admin/Contacts'
 export default function App() {
   return (
     <Routes>
@@ -55,6 +58,22 @@ export default function App() {
         element={
           <MainLayout>
             <Catalog />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/about"
+        element={
+          <MainLayout wide>
+            <About />
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/contact"
+        element={
+          <MainLayout wide>
+            <Contact />
           </MainLayout>
         }
       />
@@ -272,6 +291,16 @@ export default function App() {
           <MainLayout>
             <RoleRoute roles={['admin']}>
               <AdminCategories />
+            </RoleRoute>
+          </MainLayout>
+        }
+      />
+      <Route
+        path="/dashboard/admin/contacts"
+        element={
+          <MainLayout>
+            <RoleRoute roles={['admin']}>
+              <AdminContacts />
             </RoleRoute>
           </MainLayout>
         }

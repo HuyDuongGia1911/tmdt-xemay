@@ -17,11 +17,11 @@ class MotorcycleResource extends JsonResource
             'price' => $this->price,
             'year' => $this->year,
             'condition' => $this->condition,
-            'color' => $this->color,
+            'color_id' => $this->color_id,
             'type' => $this->type,
             'thumbnail_url' => $this->thumbnail_url ?? null,
 
-
+            'description' => $this->description,
             // ⭐ multi images
             'images' => $this->images->map(function ($img) {
                 return [
@@ -29,6 +29,11 @@ class MotorcycleResource extends JsonResource
                     'url' => $img->url,
                 ];
             }),
+            'color' => $this->color ? [
+                'id' => $this->color->id,
+                'name' => $this->color->name,
+                'code' => $this->color->code,
+            ] : null,
             'average_rating' => $this->average_rating ?? null,
             'category' => [
                 'id' => optional($this->category)->id,

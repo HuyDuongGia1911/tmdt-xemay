@@ -47,10 +47,11 @@ export default function MainLayout({ children, wide = false }) {
                 ))}
             </nav>
 
-
+            {/* HERO VÀ CÁC KHỐI FULL WIDTH */}
+            {wide}
 
             {/* NỘI DUNG TRANG */}
-            <main className={wide ? "w-full px-4 py-6" : "max-w-6xl mx-auto px-4 py-6"}>
+            <main className={wide ? "w-full px-4 py-0" : "max-w-6xl mx-auto px-4 py-0"}>
                 {children}
             </main>
 

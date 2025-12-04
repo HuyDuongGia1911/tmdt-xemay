@@ -118,8 +118,10 @@ use App\Http\Controllers\ReviewController;
 use App\Http\Controllers\SellerSetupController;
 use App\Http\Controllers\BrandController;
 use App\Http\Controllers\ColorController;
-
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\Admin\ContactAdminController;
 // ================= PUBLIC =================
+Route::middleware('throttle:contact')->post('/contact', [ContactController::class, 'store']);
 
 // auth (login/register) - throttle group
 Route::middleware('throttle:auth')->group(function () {
@@ -235,6 +237,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/orders',   [DashboardAdminController::class, 'orders']);
         Route::get('/users',    [DashboardAdminController::class, 'users']);
         Route::get('/payments', [DashboardAdminController::class, 'payments']);
+        Route::get('/contacts', [ContactAdminController::class, 'index']);
+        Route::get('/contacts/{contact}', [ContactAdminController::class, 'show']);
+        Route::delete('/contacts/{contact}', [ContactAdminController::class, 'destroy']);
     });
 });
 
